@@ -1,0 +1,16 @@
+issue: scrolling right messes up display
+
+search
+
+filter
+	limit number of lines
+	& filter
+
+cursor
+	space to add line numbers
+	separate top_line
+
+commands
+	insert/delete line in a stream, single or all panes
+	vertical alignment
+

@@ -1,0 +1,126 @@
+#!/bin/bash
+
+# load libs
+source "$(dirname "$0")/paneless_keyboard" || { echo "paneless: can't find keyboard library" ; exit 1 ; }
+source "$(dirname "$0")/paneless_core"     || { echo "paneless: can't find core library" ; exit 1 ; }
+
+# Settings
+PANELESS_GLYPH=$(echo -e '\e[2;30m')
+
+BLACK=$(echo -e '\e[30m') RED=$(echo -e '\e[31m')     GREEN=$(echo -e '\e[32m') YELLOW=$(echo -e '\e[33m')     DIM_YELLOW=$(echo -e '\e[2;33m')
+BLUE=$(echo -e '\e[34m')  MAGENTA=$(echo -e '\e[35m') CYAN=$(echo -e '\e[36m')  LIGHT_GREY=$(echo -e '\e[37m') RESET=$(echo -e '\e[0m')
+
+colors=($CYAN $MAGENTA $GREEN $DIM_YELLOW) ; 
+tab_size=8
+
+# Bindings
+leader_key='BACKSLASH'
+
+bind paneless paneless		r		list			"refresh"
+
+bind paneless paneless		q		quit			"quit"
+bind paneless paneless		Q		quit_no_clear		"quit leaving the panes visible"
+bind paneless paneless		c		k_bindings		"show command bindings"
+
+bind paneless move		PGUP		move_page_up		"page down"
+bind paneless move		CTL-B		move_page_up		"page down"
+bind paneless move		SPACE		move_page_down		"page up"
+bind paneless move		PGDN		move_page_down		"page up"
+bind paneless move		CTL-F		move_page_down		"page up"
+
+bind paneless move		DOWN		move_down_arrow		"scroll down"
+bind paneless move		UP		move_up_arrow		"scroll up"
+bind paneless move		j		move_down		"scroll down"
+bind paneless move		k		move_up			"scroll up"
+
+bind paneless move		gg		goto_first_line		"go to the first line"
+bind paneless move		G		goto_last_line		"go to the last line"
+
+bind paneless move		RIGHT		move_right		"move right"
+bind paneless move		l		move_right		"move right"
+bind paneless move		LEFT		move_left		"move left"
+bind paneless move		h		move_left		"move left"
+
+bind paneless find		gff		find_fzf		"fzf find"
+bind paneless find		b		find_fzf		"fzf find"
+
+bind paneless display		zl		flip_line_number	"flip line number overlay"
+
+# Bound functions
+flip_line_number(){ ((overlay_line_number++)) ; ((overlay_line_number > 2)) && overlay_line_number=0 ; list ; }
+goto_first_line() { top_line=0 ; list ; }
+goto_last_line()  { (( top_line = (max_lines + 1) - LINES )) ; list ; }
+move_down()       { (( top_line < max_lines && top_line++ )) ; list ; }
+move_down_arrow() { move_down ; }
+move_up()         { (( top_line > 0 && top_line--)) ; list ; }
+move_up_arrow()   { move_up ; }
+move_page_down()  { (( top_line += LINES )) ; (( top_line > ((max_lines + 1) - LINES) )) && ((top_line=((max_lines + 1) - LINES) )) ; list ; }
+move_page_up()    { (( top_line -= LINES )) ; (( top_line < 0 )) && top_line=0 ; list ; }
+move_right()      { (( start_character+=16 )) ; create_panes ; list ; } 
+move_left()       { (( start_character > 0)) && (( start_character = start_character - 16 )) ; create_panes ; list ; } 
+quit()            { tput cnorm ; stty echo ; echo -ne "\e[?25l\e[?25h\e[?1049l" ; rm -rf $fs ; exit ; }
+quit_no_clear()   { tput cnorm ; stty echo ; rm -rf $fs ; exit ; }
+
+find_fzf()
+{
+exec 2>&9
+
+source_index=-1
+for source_name in "${source_names[@]}"
+	do
+		((source_index++))
+		declare -n source_ref="$source_name"
+		
+		source_source_name="${source_source[$source_index]}" ;
+		[[ "$source_source_name" =~ ^/dev/fd ]] && display_name="$source_name" || display_name="$source_source_name"
+		
+		display_name="$(echo "$PANELESS_GLYPH$display_name:")"
+		
+		for i in $( seq 0 ${#source_ref[@]})
+			do
+				printf "$display_name %s $BLACK(%d)$RESET\n" "${source_ref[i]//[$'\r\n']}" $i
+			done
+	
+	done | fzf +s --ansi --keep-right
+
+exec 2>"$fs/log"
+
+echo -en '\e[?1049h' ; stty -echo ; tput civis
+list
+}
+
+# Options
+[[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
+
+options=$(getopt -o lLhat: -l help,ansi,line-number: -n "$0" -- "$@") || exit
+eval set -- "$options"
+
+while [[ $1 != -- ]]; do
+	case $1 in
+		-a|--ansi) ansi=1 ; shift ;;
+		-l|--line-number) overlay_line_number=1 ; shift ;;
+		-L) overlay_line_number=2 ; shift ;;
+		-t) tab_size=$2 ; shift 2 ;;
+		-h|--help)
+			echo "NAME"
+			echo "    paneless - multipane pager"
+			echo
+			echo "SYNOPSIS"
+			echo "    paneless file <(seq 5) file ..."
+			echo
+			echo "OPTIONS"
+			echo "    -a|ansi      ansi input"
+			echo "    -t           tabsize"
+			exit ;;
+		*) echo "paneless: bad option: $1" >&2; exit 1;;
+	esac
+done
+shift # -- in argument list to getopt
+
+# main loop
+load_input_streams "$@"
+
+while : ; do { [[ "$R" ]] && { REPLY="${R:0:1}" ; R="${R:1}" ; } || get_key 0.5 ; } && try key_command ; kbdf ; done
+
+# vim: set filetype=bash:
+
