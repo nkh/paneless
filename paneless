@@ -7,8 +7,8 @@ source "$(dirname "$0")/paneless_core"     || { echo "paneless: can't find core 
 # Settings
 PANELESS_GLYPH=$(echo -e '\e[2;30m')
 
-BLACK=$(echo -e '\e[30m') RED=$(echo -e '\e[31m')     GREEN=$(echo -e '\e[32m') YELLOW=$(echo -e '\e[33m')     DIM_YELLOW=$(echo -e '\e[2;33m')
-BLUE=$(echo -e '\e[34m')  MAGENTA=$(echo -e '\e[35m') CYAN=$(echo -e '\e[36m')  LIGHT_GREY=$(echo -e '\e[37m') RESET=$(echo -e '\e[0m')
+BLACK=$'\e[30m' RED=$'\e[31m'     GREEN=$'\e[32m' YELLOW=$'\e[33m'     DIM_YELLOW=$'\e[2;33m'
+BLUE=$'\e[34m'  MAGENTA=$'\e[35m' CYAN=$'\e[36m'  LIGHT_GREY=$'\e[37m' RESET=$'\e[0m'
 
 colors=($CYAN $MAGENTA $GREEN $DIM_YELLOW) ; 
 tab_size=8
