@@ -121,8 +121,6 @@ try_errorp(){ pdhn  "$(cat $fs/log)" ; tmux popup -w 80% "$(try_error)" ; }
 
 # core setup
 
-ARGV=("$@") # used to reload files
-
 fs="$(mktemp -u -p /tmp/$USER paneless_XXXXXX)" ; mkdir -p $fs # work directory
 
 geo_winch   # save terminal size

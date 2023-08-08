@@ -122,6 +122,8 @@ shift # -- in argument list to getopt
 
 # main loop
 
+ARGV=("$@") # used to reload files
+
 load_input_streams "$@"
 
 while : ; do winch ; get_key $KEY_TIMEOUT && try key_command ; kbdf ; winch=1 ; done
