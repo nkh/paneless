@@ -71,10 +71,6 @@ The *paneless* file you run contains the configuration and bindings (press 'c' t
 
 You can change the color used by *paneless* as well as the bindings (vim-like by default).
 
-# TODOs
-
-- handle winch
-
 # AUTHORS
 
     Khemir Nadim ibn Hamouda

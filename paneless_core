@@ -1,10 +1,6 @@
-# work directory
-fs="$(mktemp -u -p /tmp/$USER paneless_XXXXXX)" ; mkdir -p $fs
-
 load_input_streams()
 {
 sources=$#
-((pane_columns = ($COLUMNS / $sources) -1 ))
 
 source_index=-1
 
@@ -47,6 +43,8 @@ for((line=$top_line ; line <= bottom_line ; line++))
 
 create_panes()
 {
+((pane_columns = ($COLS / $sources) - 1))
+
 separator="$(echo "$PANELESS_GLYPH│$RESET")"
 continuation_glyph="$(echo "$PANELESS_GLYPH~$RESET")"
 padding="$(perl -e 'print " " x $ARGV[0]' $pane_columns)"
@@ -107,9 +105,23 @@ for((line = max_lines ; line <= max_lines + LINES; line++))
 	done
 }
 
+reload() { source_names=() ; line_blocks=() ; panes=() ; load_input_streams "${ARGV[@]}"  ; }
+
+geo_winch() { geometry ; WCOLS=$COLS ; WLINES=$LINES ; }
+geometry()  { LINES=$(tput lines) ;  COLS=$(tput cols) ; }
+winch()     { ((winch)) || return ; geometry ; ((WCOLS != COLS)) && { create_panes ; list ; true ; } || ((WLINES != LINES)) && list ; WCOLS=$COLS ; WLINES=$LINES ; }
+
 pdhn()      { echo "$@" ; read -sn1 ; }
 try()       { exec 9>&2 2>"$fs/log" ; "$@" ; exec 2>&9 ; [[ -s $fs/log ]] && try_errorp ; }
 try_error() { echo "echo -ne '\e[2J\e[H\e[31m' ; cat $fs/log | tee -a $fs/errors_log && rm $fs/log" ; }
 try_errorp(){ pdhn  "$(cat $fs/log)" ; tmux popup -w 80% "$(try_error)" ; }
+
+# core setup
+
+ARGV=("$@") # used to reload files
+
+fs="$(mktemp -u -p /tmp/$USER paneless_XXXXXX)" ; mkdir -p $fs # work directory
+
+geo_winch   # save terminal size
 
 # vim: set filetype=bash:

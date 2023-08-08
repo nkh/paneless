@@ -14,6 +14,7 @@ colors=($CYAN $MAGENTA $GREEN $DIM_YELLOW) ;
 tab_size=8
 
 # Bindings
+KEY_TIMEOUT=0.5
 leader_key='BACKSLASH'
 
 bind paneless paneless		r		list			"refresh"
@@ -90,9 +91,7 @@ echo -en '\e[?1049h' ; stty -echo ; tput civis
 list
 }
 
-reload() { source_names=() ; line_blocks=() ; panes=() ; load_input_streams "${ARGV[@]}"  ; }
-
-# Options
+# Parse options
 [[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
 
 options=$(getopt -o lLhat: -l help,ansi,line-number: -n "$0" -- "$@") || exit
@@ -121,10 +120,10 @@ done
 shift # -- in argument list to getopt
 
 # main loop
-ARGV=("$@")
+
 load_input_streams "$@"
 
-while : ; do { [[ "$R" ]] && { REPLY="${R:0:1}" ; R="${R:1}" ; } || get_key 0.5 ; } && try key_command ; kbdf ; done
+while : ; do winch ; get_key $KEY_TIMEOUT && try key_command ; kbdf ; winch=1 ; done
 
 # vim: set filetype=bash:
 

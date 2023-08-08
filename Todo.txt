@@ -1,16 +1,11 @@
 issue: scrolling right messes up display
 
-handle winch
-
 watch files
 	via external app that sends signal instead for internal implementation
 	reload specific file
 		what when the stream is not from a file?
 			reload
 			implies signals are for column not file names
-
-reload files
-
 
 search
 
