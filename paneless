@@ -17,16 +17,17 @@ tab_size=8
 leader_key='BACKSLASH'
 
 bind paneless paneless		r		list			"refresh"
+bind paneless paneless		R		reload			"reload"
 
 bind paneless paneless		q		quit			"quit"
 bind paneless paneless		Q		quit_no_clear		"quit leaving the panes visible"
 bind paneless paneless		c		k_bindings		"show command bindings"
 
-bind paneless move		PGUP		move_page_up		"page down"
-bind paneless move		CTL-B		move_page_up		"page down"
-bind paneless move		SPACE		move_page_down		"page up"
-bind paneless move		PGDN		move_page_down		"page up"
-bind paneless move		CTL-F		move_page_down		"page up"
+bind paneless move		PGUP		move_page_up		"page up"
+bind paneless move		CTL-B		move_page_up		"page up"
+bind paneless move		SPACE		move_page_down		"page down"
+bind paneless move		PGDN		move_page_down		"page down"
+bind paneless move		CTL-F		move_page_down		"page down"
 
 bind paneless move		DOWN		move_down_arrow		"scroll down"
 bind paneless move		UP		move_up_arrow		"scroll up"
@@ -89,6 +90,8 @@ echo -en '\e[?1049h' ; stty -echo ; tput civis
 list
 }
 
+reload() { source_names=() ; line_blocks=() ; panes=() ; load_input_streams "${ARGV[@]}"  ; }
+
 # Options
 [[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
 
@@ -118,6 +121,7 @@ done
 shift # -- in argument list to getopt
 
 # main loop
+ARGV=("$@")
 load_input_streams "$@"
 
 while : ; do { [[ "$R" ]] && { REPLY="${R:0:1}" ; R="${R:1}" ; } || get_key 0.5 ; } && try key_command ; kbdf ; done

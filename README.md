@@ -24,8 +24,35 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | -t=tabsize |               | set tab size (8 default)                         |
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |
-|            |               | binding **zl** can be used to cycle line display |
-| -h         | --help        | display help
+| -h         | --help        | display help                                     |
+
+## Bindings
+
+| binding | function                       |
+| ------- | ------------------------------ |
+| q       | quit                           |
+| Q       | quit leaving the panes visible |
+| c       | show command bindings          |
+| r       | refresh                        |
+| R       | reload                         |
+| CTL-B   | page down                      |
+| PGUP    | page down                      |
+| SPACE   | page up                        |
+| PGDN    | page up                        |
+| CTL-F   | page up                        |
+| j       | scroll down                    |
+| k       | scroll up                      |
+| DOWN    | scroll down                    |
+| UP      | scroll up                      |
+| gg      | go to the first line           |
+| G       | go to the last line            |
+| l       | move right                     |
+| RIGHT   | move right                     |
+| h       | move left                      |
+| LEFT    | move left                      |
+| gff     | fzf find                       |
+| b       | fzf find                       |
+| zl      | flip line number overlay       |
 
 # DEPENDENCIES
 
@@ -43,6 +70,10 @@ Clone the repository and add it to your PATH; or link/copy the files to somewher
 The *paneless* file you run contains the configuration and bindings (press 'c' to see the bindings in FZF).
 
 You can change the color used by *paneless* as well as the bindings (vim-like by default).
+
+# TODOs
+
+- handle winch
 
 # AUTHORS
 

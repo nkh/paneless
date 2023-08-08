@@ -1,4 +1,3 @@
-
 # work directory
 fs="$(mktemp -u -p /tmp/$USER paneless_XXXXXX)" ; mkdir -p $fs
 
@@ -32,6 +31,7 @@ top_line=0 ; list ;
 list()
 {
 echo -en "\e[H\e[J"
+LINES=$(tput lines)
 
 ((bottom_line = top_line + $LINES -1))
 
