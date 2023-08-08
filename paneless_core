@@ -37,8 +37,8 @@ for((line=$top_line ; line <= bottom_line ; line++))
 		((line != bottom_line)) && echo
 	done
 
-((overlay_line_number == 1)) && echo -en "\e[H$MAGENTA[$top_line]"
-((overlay_line_number == 2)) && echo -en "\r$MAGENTA[$((top_line + LINES))]"
+((overlay_line_number == 1)) && echo -en "\e[H$MAGENTA[$top_line]$RESET"
+((overlay_line_number == 2)) && echo -en "\r$MAGENTA[$((top_line + LINES))]$RESET"
 }
 
 create_panes()
@@ -57,8 +57,11 @@ current_color=0
 source_index=-1
 for source_name in "${source_names[@]}"
 	do
-		color=${colors[current_color]}
-		((current_color++, current_color >= ${#colors[@]})) && current_color=0
+		((no_color)) && color= ||
+			{
+			color=${colors[current_color]}
+			((current_color++, current_color >= ${#colors[@]})) && current_color=0
+			}
 		
 		((source_index++))
 		declare -n source_ref="$source_name"
@@ -108,7 +111,7 @@ for((line = max_lines ; line <= max_lines + LINES; line++))
 reload() { source_names=() ; line_blocks=() ; panes=() ; load_input_streams "${ARGV[@]}"  ; }
 
 geo_winch() { geometry ; WCOLS=$COLS ; WLINES=$LINES ; }
-geometry()  { LINES=$(tput lines) ;  COLS=$(tput cols) ; }
+geometry()  { { read LINES ; read COLS ; } < <(tput lines cols) ; }
 winch()     { ((winch)) || return ; geometry ; ((WCOLS != COLS)) && { create_panes ; list ; true ; } || ((WLINES != LINES)) && list ; WCOLS=$COLS ; WLINES=$LINES ; }
 
 pdhn()      { echo "$@" ; read -sn1 ; }

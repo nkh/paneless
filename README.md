@@ -24,6 +24,7 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | -t=tabsize |               | set tab size (8 default)                         |
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |
+|            | --no-color    | do not color text                                |
 | -h         | --help        | display help                                     |
 
 ## Bindings
