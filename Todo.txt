@@ -1,5 +1,9 @@
 issue: scrolling right messes up display
 
+separate stream panes
+
+fixed header lines
+
 watch files
 	via external app that sends signal instead for internal implementation
 	reload specific file
@@ -23,3 +27,4 @@ commands
 	insert/delete line in a stream, single or all panes
 	vertical alignment
 
+external commands

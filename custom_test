@@ -1,0 +1,12 @@
+
+bind custom test		zp		custom_test	"custom test"
+
+# Bound functions
+custom_test()
+{
+tmux popup -h60% -w80% "echo test"
+}
+
+
+# vim: set ft=bash:
+
