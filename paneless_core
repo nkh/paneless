@@ -26,7 +26,7 @@ top_line=0 ; list ;
 
 list()
 {
-echo -en "\e[H\e[J"
+echo -en "\e[H"
 LINES=$(tput lines)
 
 ((bottom_line = top_line + $LINES -1))
@@ -47,7 +47,7 @@ create_panes()
 
 separator="$(echo "$PANELESS_GLYPH│$RESET")"
 continuation_glyph="$(echo "$PANELESS_GLYPH~$RESET")"
-padding="$(perl -e 'print " " x $ARGV[0]' $pane_columns)"
+padding="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 1)' $pane_columns)"
 
 panes=()
 line_blocks=()
@@ -104,7 +104,7 @@ for((line=0 ; line < max_lines ; line++))
 
 for((line = max_lines ; line <= max_lines + LINES; line++))
 	do
-	panes[line]="$continuation_glyph"
+	panes[line]="$continuation_glyph"$'\e[K'
 	done
 }
 
