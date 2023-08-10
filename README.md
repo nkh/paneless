@@ -22,10 +22,11 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | ---------- | ------------- | ------------------------------------------------ |
 | -a         | --ansi        | input contains ANSI color code                   |
 | -c file    | --custom=file | add custom commands                              |
-| -t=tabsize |               | set tab size (8 default)                         |
+| -e="k=v"   |               | store option for custom commands                 |
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |
 |            | --no-color    | do not color text                                |
+| -t=tabsize |               | set tab size (8 default)                         |
 | -h         | --help        | display help                                     |
 
 ## Bindings
@@ -52,6 +53,9 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | RIGHT   | move right                     |
 | h       | move left                      |
 | LEFT    | move left                      |
+| /       | searn                          |
+| n       | find next                      |
+| N       | find previous                  |
 | gff     | fzf find                       |
 | b       | fzf find                       |
 | zl      | flip line number overlay       |

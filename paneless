@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # load libs
-source "$(dirname "$0")/paneless_keyboard" || { echo "paneless: can't find keyboard library" ; exit 1 ; }
-source "$(dirname "$0")/paneless_core"     || { echo "paneless: can't find core library" ; exit 1 ; }
+source "$(dirname "$0")/paneless_keyboard"  || { echo "paneless: can't find keyboard library" ; exit 1 ; }
+source "$(dirname "$0")/paneless_core"      || { echo "paneless: can't find core library" ; exit 1 ; }
+source "$(dirname "$0")/paneless_functions" || { echo "paneless: can't find functions library" ; exit 1 ; }
 
 # Settings
 PANELESS_GLYPH=$(echo -e '\e[2;30m')
@@ -45,63 +46,25 @@ bind paneless move		h		move_left		"move left"
 
 bind paneless find		gff		find_fzf		"fzf find"
 bind paneless find		b		find_fzf		"fzf find"
+bind paneless find		/		search			"search"
+bind paneless find		n		find_next		"find next"
+bind paneless find		N		find_previous		"find previous"
 
 bind paneless display		zl		flip_line_number	"flip line number overlay"
 
-# Bound functions
-flip_line_number(){ ((overlay_line_number++)) ; ((overlay_line_number > 2)) && overlay_line_number=0 ; list ; }
-goto_first_line() { top_line=0 ; list ; }
-goto_last_line()  { (( top_line = (max_lines + 1) - LINES )) ; list ; }
-move_down()       { (( top_line < max_lines && top_line++ )) ; list ; }
-move_down_arrow() { move_down ; }
-move_up()         { (( top_line > 0 && top_line--)) ; list ; }
-move_up_arrow()   { move_up ; }
-move_page_down()  { (( top_line += LINES )) ; (( top_line > ((max_lines + 1) - LINES) )) && ((top_line=((max_lines + 1) - LINES) )) ; list ; }
-move_page_up()    { (( top_line -= LINES )) ; (( top_line < 0 )) && top_line=0 ; list ; }
-move_right()      { (( start_character+=16 )) ; create_panes ; list ; } 
-move_left()       { (( start_character > 0)) && (( start_character = start_character - 16 )) ; create_panes ; list ; } 
-quit()            { tput cnorm ; stty echo ; echo -ne "\e[?25l\e[?25h\e[?1049l" ; rm -rf $fs ; exit ; }
-quit_no_clear()   { tput cnorm ; stty echo ; rm -rf $fs ; exit ; }
-
-find_fzf()
-{
-exec 2>&9
-
-source_index=-1
-for source_name in "${source_names[@]}"
-	do
-		((source_index++))
-		declare -n source_ref="$source_name"
-		
-		source_source_name="${source_source[$source_index]}" ;
-		[[ "$source_source_name" =~ ^/dev/fd ]] && display_name="$source_name" || display_name="$source_source_name"
-		
-		display_name="$(echo "$PANELESS_GLYPH$display_name:")"
-		
-		for i in $( seq 0 ${#source_ref[@]})
-			do
-				printf "$display_name %s $BLACK(%d)$RESET\n" "${source_ref[i]//[$'\r\n']}" $i
-			done
-	
-	done | fzf +s --ansi --keep-right
-
-exec 2>"$fs/log"
-
-echo -en '\e[?1049h' ; stty -echo ; tput civis
-list
-}
-
 # Parse options
+declare -A e # extra options for the customization scripts
+
 [[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
 
-options=$(getopt -o ac:lLt:h -l help,ansi,custom:,line-number:,no-color -n "$0" -- "$@") || exit
+options=$(getopt -o ac:e:lLt:h -l help,ansi,custom:,line-number:,no-color -n "$0" -- "$@") || exit
 eval set -- "$options"
 
 while [[ $1 != -- ]]; do
 	case $1 in
 		-a|--ansi       ) ansi=1                ; shift   ;;
 		-c|--custom     ) customization=$2      ; shift 2 ;;
-		-l|--line-number) overlay_line_number=1 ; shift   ;;
+		-e              ) IFS=$'=' <<<"$2" read -r K V ; e[$K]="$V" ; shift 2 ;;
 		-L              ) overlay_line_number=2 ; shift   ;;
 		--no-color      ) no_color=1            ; shift   ;;
 		-t              ) tab_size=$2           ; shift 2 ;;
@@ -113,7 +76,7 @@ while [[ $1 != -- ]]; do
 				echo "    paneless file <(seq 5 ) file ..."
 				echo
 				echo "OPTIONS"
-				echo "    -a|ansi      ansi input"
+				echo "    -a|--ansi    ansi input"
 				echo "    -t           tabsize"
 				exit ;;
 		*               ) echo "paneless: bad option: $1" >&2; exit 1;;

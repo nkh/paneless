@@ -20,7 +20,7 @@ start_character=0 ; create_panes
 
 # display panes and wait for commands
 
-echo -en '\e[?1049h' ; stty -echo ; tput civis
+echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis
 top_line=0 ; list ;
 }
 
@@ -33,7 +33,13 @@ LINES=$(tput lines)
 
 for((line=$top_line ; line <= bottom_line ; line++))
 	do
-		echo -n "${panes[line]}"
+		((line == top_line)) && 
+			{
+			# ((highlight)) && 
+			# 	{ echo "${panes[line]}" | rg "$search_string" ; highlight= ; } ||
+				echo -n "${panes[line]}"
+			} ||
+			echo -n "${panes[line]}"
 		((line != bottom_line)) && echo
 	done
 
@@ -106,6 +112,8 @@ for((line = max_lines ; line <= max_lines + LINES; line++))
 	do
 	panes[line]="$continuation_glyph"$'\e[K'
 	done
+
+printf "%s\n" "${panes[@]}" >"$serialized_panes"
 }
 
 reload() { source_names=() ; line_blocks=() ; panes=() ; load_input_streams "${ARGV[@]}"  ; }
@@ -119,9 +127,12 @@ try()       { exec 9>&2 2>"$fs/log" ; "$@" ; exec 2>&9 ; [[ -s $fs/log ]] && try
 try_error() { echo "echo -ne '\e[2J\e[H\e[31m' ; cat $fs/log | tee -a $fs/errors_log && rm $fs/log" ; }
 try_errorp(){ pdhn  "$(cat $fs/log)" ; tmux popup -w 80% "$(try_error)" ; }
 
+prompt()    { exec 2>&9 ; stty echo ; echo -ne "\e[H\e[K$MAGENTA\e[?25h" ; read -e -rp "$@" ; echo -ne '\e[m' ; stty -echo ; tput civis ; exec 2>"$fs/log" ; }
+
 # core setup
 
 fs="$(mktemp -u -p /tmp/$USER paneless_XXXXXX)" ; mkdir -p $fs # work directory
+serialized_panes="$fs/serialized_panes"
 
 geo_winch   # save terminal size
 
