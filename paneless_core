@@ -49,11 +49,14 @@ for((line=$top_line ; line <= bottom_line ; line++))
 
 create_panes()
 {
-((pane_columns = ($COLS / $sources) - 1))
+((pane_columns = (COLS / sources) - 1))
 
 separator="$(echo "$PANELESS_GLYPH│$RESET")"
 continuation_glyph="$(echo "$PANELESS_GLYPH~$RESET")"
 padding="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 1)' $pane_columns)"
+
+((end_padding = (COLS - ((pane_columns +1)  * sources) ) + 1))
+end_padding="$(perl -e 'print " " x $ARGV[0]' $end_padding)"
 
 panes=()
 line_blocks=()
@@ -106,6 +109,8 @@ for((line=0 ; line < max_lines ; line++))
 				
 				panes[$line]+="$col_separator$new_pane"
 			done
+		
+		panes[$line]+="$end_padding"
 	done
 
 for((line = max_lines ; line <= max_lines + LINES; line++))
