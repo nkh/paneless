@@ -29,7 +29,7 @@ list()
 echo -en "\e[H"
 LINES=$(tput lines)
 
-((bottom_line = top_line + $LINES -1))
+((bottom_line = top_line + ($LINES - 1) - status_line))
 
 for((line=$top_line ; line <= bottom_line ; line++))
 	do
@@ -43,9 +43,13 @@ for((line=$top_line ; line <= bottom_line ; line++))
 		((line != bottom_line)) && echo
 	done
 
+update_status
+
 ((overlay_line_number == 1)) && echo -en "\e[H$MAGENTA[$top_line]$RESET"
 ((overlay_line_number == 2)) && echo -en "\r$MAGENTA[$((top_line + LINES))]$RESET"
 }
+
+update_status() { echo -en "\e[$((bottom_line + 2));0H\e[K" ; }
 
 create_panes()
 {

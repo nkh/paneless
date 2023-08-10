@@ -57,7 +57,7 @@ declare -A e # extra options for the customization scripts
 
 [[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
 
-options=$(getopt -o ac:e:lLt:h -l help,ansi,custom:,line-number:,no-color -n "$0" -- "$@") || exit
+options=$(getopt -o ac:e:lLt:h -l help,ansi,custom:,line-number:,no-color,status-line -n "$0" -- "$@") || exit
 eval set -- "$options"
 
 while [[ $1 != -- ]]; do
@@ -67,6 +67,7 @@ while [[ $1 != -- ]]; do
 		-e              ) IFS=$'=' <<<"$2" read -r K V ; e[$K]="$V" ; shift 2 ;;
 		-L              ) overlay_line_number=2 ; shift   ;;
 		--no-color      ) no_color=1            ; shift   ;;
+		--status-line   ) status_line=1         ; shift   ;;
 		-t              ) tab_size=$2           ; shift 2 ;;
 		-h|--help       )
 				echo "NAME"
