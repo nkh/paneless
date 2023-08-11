@@ -18,7 +18,7 @@ for fd in "$@"
 # format pane contents
 start_character=0 ; create_panes
 
-# display panes and wait for commands
+# display lines and wait for commands
 
 echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis
 top_line=0 ; list ;
@@ -26,30 +26,24 @@ top_line=0 ; list ;
 
 list()
 {
-echo -en "\e[H"
 LINES=$(tput lines)
 
-((bottom_line = top_line + ($LINES - 1) - status_line))
+((bottom_line = $LINES - status_line))
 
-for((line=$top_line ; line <= bottom_line ; line++))
+for((line = 1, pline = top_line ; line <= bottom_line ; line++, pline++))
 	do
-		((line == top_line)) && 
-			{
-			# ((highlight)) && 
-			# 	{ echo "${panes[line]}" | rg "$search_string" ; highlight= ; } ||
-				echo -n "${panes[line]}"
-			} ||
-			echo -n "${panes[line]}"
-		((line != bottom_line)) && echo
+		(( pline < ${#lines[@]} )) &&
+			{ echo -en "\e[$line;0H\e[K" ; echo -n "${lines[pline]}" ; } ||
+			echo -en "\e[$line;0H\e[K$continuation_glyph"
 	done
 
 update_status
 
-((overlay_line_number == 1)) && echo -en "\e[H$MAGENTA[$top_line]$RESET"
-((overlay_line_number == 2)) && echo -en "\r$MAGENTA[$((top_line + LINES))]$RESET"
+((overlay_line_number == 1)) && echo -en "\e[H$MAGENTA[$((top_line + 1))$overlay_line_total]$RESET"
+((overlay_line_number == 2)) && echo -en "\e[$bottom_line;0H$MAGENTA[$((top_line + bottom_line))$overlay_line_total]$RESET"
 }
 
-update_status() { echo -en "\e[$((bottom_line + 2));0H\e[K" ; }
+update_status() { ((status_line)) && echo -en "\e[$((bottom_line + 2));0H\e[K" ; }
 
 create_panes()
 {
@@ -62,7 +56,7 @@ padding="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 1)' $pane_columns
 ((end_padding = (COLS - ((pane_columns +1)  * sources) ) + 1))
 end_padding="$(perl -e 'print " " x $ARGV[0]' $end_padding)"
 
-panes=()
+lines=()
 line_blocks=()
 current_color=0
 
@@ -111,21 +105,15 @@ for((line=0 ; line < max_lines ; line++))
 				declare -n array_ref="$array_name"
 				((line < ${#array_ref[@]})) && new_pane="${array_ref[line]}" || new_pane="$padding"
 				
-				panes[$line]+="$col_separator$new_pane"
+				lines[$line]+="$col_separator$new_pane"
 			done
 		
-		panes[$line]+="$end_padding"
+		lines[$line]+="$end_padding"
 	done
-
-for((line = max_lines ; line <= max_lines + LINES; line++))
-	do
-	panes[line]="$continuation_glyph"$'\e[K'
-	done
-
-printf "%s\n" "${panes[@]}" >"$serialized_panes"
+printf "%s\n" "${lines[@]}" >"$serialized_panes"
 }
 
-reload() { source_names=() ; line_blocks=() ; panes=() ; load_input_streams "${ARGV[@]}"  ; }
+reload() { source_names=() ; line_blocks=() ; lines=() ; load_input_streams "${ARGV[@]}"  ; }
 
 geo_winch() { geometry ; WCOLS=$COLS ; WLINES=$LINES ; }
 geometry()  { { read LINES ; read COLS ; } < <(tput lines cols) ; }

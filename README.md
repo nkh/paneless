@@ -26,6 +26,7 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |
 |            | --no-color    | do not color text                                |
+|            | --status-line | reserve space for status line                    |
 | -t=tabsize |               | set tab size (8 default)                         |
 | -h         | --help        | display help                                     |
 
@@ -59,6 +60,7 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | gff     | fzf find                       |
 | b       | fzf find                       |
 | zl      | flip line number overlay       |
+| zt      | flip line total display        |
 
 # DEPENDENCIES
 

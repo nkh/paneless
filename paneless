@@ -51,6 +51,7 @@ bind paneless find		n		find_next		"find next"
 bind paneless find		N		find_previous		"find previous"
 
 bind paneless display		zl		flip_line_number	"flip line number overlay"
+bind paneless display		zt		flip_line_total		"flip line total"
 
 # Parse options
 declare -A e # extra options for the customization scripts
@@ -77,8 +78,13 @@ while [[ $1 != -- ]]; do
 				echo "    paneless file <(seq 5 ) file ..."
 				echo
 				echo "OPTIONS"
-				echo "    -a|--ansi    ansi input"
-				echo "    -t           tabsize"
+				echo "    -a|--ansi        ansi input"
+				echo "    -c|--custom      custom script"
+				echo "    -e               custom argument"
+				echo "    -l|-L            display line number"        
+				echo "    --no-color"
+				echo "    --status-line    custom status line"
+				echo "    -t               tabsize"
 				exit ;;
 		*               ) echo "paneless: bad option: $1" >&2; exit 1;;
 	esac

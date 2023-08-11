@@ -1,6 +1,7 @@
 # Bound functions
 
 flip_line_number(){ ((overlay_line_number++)) ; ((overlay_line_number > 2)) && overlay_line_number=0 ; list ; }
+flip_line_total() { [[ "$overlay_line_total" ]] && overlay_line_total= || overlay_line_total="/${#lines[@]}" ; list ; }
 goto_first_line() { top_line=0 ; list ; }
 goto_last_line()  { (( top_line = (max_lines + 1) - LINES )) ; list ; }
 move_down()       { (( top_line < max_lines && top_line++ )) ; list ; }

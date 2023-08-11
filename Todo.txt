@@ -1,6 +1,11 @@
 issue: scrolling right messes up display
 
-separate stream panes
+separate stream pane lines
+	pane not drawn
+
+give size of panes
+	for ansi_poupou
+		in columns or percentage
 
 fixed header lines
 
@@ -12,6 +17,7 @@ watch files
 			implies signals are for column not file names
 
 search
+	highlight
 
 filter
 	limit number of lines
@@ -28,3 +34,5 @@ commands
 	vertical alignment
 
 external commands
+	on what?
+
