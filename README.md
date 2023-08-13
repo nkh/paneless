@@ -26,6 +26,7 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | -e="k=v"   |               | store option for custom commands                 |
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |
+|            | --no-bindings | 'quit' bindings only                             |
 |            | --no-color    | do not color text                                |
 |            | --status-line | reserve space for status line                    |
 | -t=tabsize |               | set tab size (8 default)                         |
