@@ -6,7 +6,7 @@ source "$(dirname "$0")/paneless_core"      || { echo "paneless: can't find core
 source "$(dirname "$0")/paneless_functions" || { echo "paneless: can't find functions library" ; exit 1 ; }
 
 # Settings
-PANELESS_GLYPH=$(echo -e '\e[2;30m')
+PANELESS_GLYPH=$'\e[2;30m'
 
 BLACK=$'\e[30m' RED=$'\e[31m'     GREEN=$'\e[32m' YELLOW=$'\e[33m'     DIM_YELLOW=$'\e[2;33m'
 BLUE=$'\e[34m'  MAGENTA=$'\e[35m' CYAN=$'\e[36m'  LIGHT_GREY=$'\e[37m' RESET=$'\e[0m'
@@ -58,7 +58,7 @@ declare -A e # extra options for the customization scripts
 
 [[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
 
-options=$(getopt -o ac:e:lLt:h -l help,ansi,custom:,line-number:,no-color,status-line -n "$0" -- "$@") || exit
+options=$(getopt -o ac:e:lLt:w:h -l help,ansi,custom:,line-number:,no-color,status-line -n "$0" -- "$@") || exit
 eval set -- "$options"
 
 while [[ $1 != -- ]]; do
@@ -70,6 +70,7 @@ while [[ $1 != -- ]]; do
 		--no-color      ) no_color=1            ; shift   ;;
 		--status-line   ) status_line=1         ; shift   ;;
 		-t              ) tab_size=$2           ; shift 2 ;;
+		-w              ) widths+=($2)          ; shift 2 ;;
 		-h|--help       )
 				echo "NAME"
 				echo "    paneless - multipane pager"
@@ -85,6 +86,7 @@ while [[ $1 != -- ]]; do
 				echo "    --no-color"
 				echo "    --status-line    custom status line"
 				echo "    -t               tabsize"
+				echo "    -w              'characters|percent'"
 				exit ;;
 		*               ) echo "paneless: bad option: $1" >&2; exit 1;;
 	esac

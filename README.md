@@ -28,6 +28,7 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 |            | --no-color    | do not color text                                |
 |            | --status-line | reserve space for status line                    |
 | -t=tabsize |               | set tab size (8 default)                         |
+| -w         |               | size in characters or percent                    |
 | -h         | --help        | display help                                     |
 
 ## Bindings

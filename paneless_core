@@ -47,14 +47,41 @@ update_status() { ((status_line)) && echo -en "\e[$((bottom_line + 2));0H\e[K" ;
 
 create_panes()
 {
-((pane_columns = (COLS / sources) - 1))
+((remaining_cols = COLS, remaining_perc = 100, sharing_panes = sources))
+pane_columns=()
 
-separator="$(echo "$PANELESS_GLYPH│$RESET")"
-continuation_glyph="$(echo "$PANELESS_GLYPH~$RESET")"
-padding="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 1)' $pane_columns)"
+for w in "${widths[@]}"
+	do
+		if   [[ "$w" =~ [[:digit:]][[:digit:]]$  ]]
+			then { ((wt = w + 1)) ; pane_columns+=($wt) ; ((sharing_panes-- , remaining_cols -= wt, remaining_cols >= 0)) || { echo "paneless: can't fit $w" && exit 1 ; } ; }
+		elif [[ "$w" =~ [[:digit:]][[:digit:]]\%$ ]]
+			then { pane_columns+=($w) ; ((sharing_panes-- , remaining_perc -= ${w:0:-1} , remaining_perc >= 0)) || { echo "paneless: can't fit $w" && exit 1 ; } ; }
+		else pane_columns+=('')
+		fi
+	done
 
-((end_padding = (COLS - ((pane_columns +1)  * sources) ) + 1))
-end_padding="$(perl -e 'print " " x $ARGV[0]' $end_padding)"
+((sharing_panes > 0)) && 
+	{
+	((pane_share = ( (remaining_cols * remaining_perc) / (sharing_panes * 100) ) - 1)) || pane_share=0
+	((pane_share <= 0)) && { echo "paneless: not enought room" ; exit 1 ; }
+	}
+
+for ((source_index = 0 ;  source_index < $sources ; source_index++))
+	do
+		[[ "${pane_columns[source_index]}" ]] &&
+			{
+			[[ "${pane_columns[source_index]}" =~ [[:digit:]][[:digit:]]% ]] &&
+				(( pane_columns[source_index] = remaining_cols * ${pane_columns[source_index]:0:-1}  / 100 ))
+			
+			true
+			} ||
+			{
+			((pane_columns[source_index] = $pane_share))
+			}
+	done
+
+separator=$"$PANELESS_GLYPH│$RESET"
+continuation_glyph=$"$PANELESS_GLYPH~$RESET"
 
 lines=()
 line_blocks=()
@@ -82,9 +109,11 @@ for source_name in "${source_names[@]}"
 			<(\
 			printf "%s" "${source_ref[@]}" | \
 			{
+			((text_length = pane_columns[source_index] - 1))
+			
 			((ansi)) \
-				&& perl -pe 'BEGIN{ use Text::ANSI::WideUtil qw( ta_mbsubstr ) ; use open qw(:std :utf8); } ; chomp ; $_ = "'$color'" . ta_mbsubstr($_ . (" " x 200), '$start_character', '$pane_columns') . "'$RESET'\n"' \
-				|| perl -pe 'BEGIN{ use open qw(:std :utf8); } ; chomp ; $_ = "'$color'" . substr($_ . (" " x 200), '$start_character', '$pane_columns') . "'$RESET'\n"'
+				&& perl -pe 'BEGIN{ use Text::ANSI::WideUtil qw( ta_mbsubstr ) ; use open qw(:std :utf8); } ; chomp ; $_ = "'$color'" . ta_mbsubstr($_ . (" " x 200), '$start_character', '$text_length') . "'$RESET'\n"' \
+				|| perl -pe 'BEGIN{ use open qw(:std :utf8); } ; chomp ; $_ = "'$color'" . substr($_ . (" " x 200), '$start_character', '$text_length') . "'$RESET'\n"'
 			}
 			)
 		
@@ -93,6 +122,17 @@ for source_name in "${source_names[@]}"
 		
 	done
 
+used_columns=0
+
+for ((source_index = 0 ;  source_index < $sources ; source_index++))
+	do
+		padding[source_index]="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 2)' "${pane_columns[source_index]}")"
+		
+		((used_columns += pane_columns[source_index]))
+	done
+
+end_padding="$(perl -e 'print " " x $ARGV[0]' $((COLS - used_columns)))"
+
 # join formatted input
 for((line=0 ; line < max_lines ; line++))
 	do
@@ -100,16 +140,16 @@ for((line=0 ; line < max_lines ; line++))
 		for array_name in ${line_blocks[@]}
 			do
 				((source_index++))
-				((source_index)) && col_separator="$separator" || col_separator=
 				
 				declare -n array_ref="$array_name"
-				((line < ${#array_ref[@]})) && new_pane="${array_ref[line]}" || new_pane="$padding"
+				((line < ${#array_ref[@]})) && pane_text="${array_ref[line]}" || pane_text="${padding[source_index]}"
 				
-				lines[$line]+="$col_separator$new_pane"
+				lines[$line]+="$pane_text$separator"
 			done
 		
 		lines[$line]+="$end_padding"
 	done
+
 printf "%s\n" "${lines[@]}" >"$serialized_panes"
 }
 

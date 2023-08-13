@@ -50,7 +50,7 @@ for source_name in "${source_names[@]}"
 		source_source_name="${source_source[$source_index]}" ;
 		[[ "$source_source_name" =~ ^/dev/fd ]] && display_name="$source_name" || display_name="$source_source_name"
 		
-		display_name="$(echo "$PANELESS_GLYPH$display_name:")"
+		display_name=$"$PANELESS_GLYPH$display_name:"
 		
 		for i in $( seq 0 ${#source_ref[@]})
 			do

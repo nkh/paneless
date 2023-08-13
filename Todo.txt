@@ -1,14 +1,20 @@
 issue: scrolling right messes up display
 
+align panes right
+
 separate stream pane lines
-	pane not drawn
+	pane with custom renderer
 
 give size of panes
 	for ansi_poupou
 		in columns or percentage
 
 fixed header lines
-
+	top status, multi line
+		read from stream
+	per pane
+		display stream name
+		
 watch files
 	via external app that sends signal instead for internal implementation
 	reload specific file
