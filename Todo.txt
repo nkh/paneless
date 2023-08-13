@@ -1,13 +1,10 @@
 issue: scrolling right messes up display
 
-align panes right
+#align panes right
+	workaround give 100% to rest
 
 separate stream pane lines
 	pane with custom renderer
-
-give size of panes
-	for ansi_poupou
-		in columns or percentage
 
 fixed header lines
 	top status, multi line
@@ -38,7 +35,4 @@ cursor
 commands
 	insert/delete line in a stream, single or all panes
 	vertical alignment
-
-external commands
-	on what?
 

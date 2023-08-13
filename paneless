@@ -18,12 +18,12 @@ tab_size=8
 KEY_TIMEOUT=0.5
 leader_key='BACKSLASH'
 
-bind paneless paneless		r		list			"refresh"
-bind paneless paneless		R		reload			"reload"
-
 bind paneless paneless		q		quit			"quit"
 bind paneless paneless		Q		quit_no_clear		"quit leaving the panes visible"
 bind paneless paneless		c		k_bindings		"show command bindings"
+
+bind paneless paneless		r		list			"refresh"
+bind paneless paneless		R		reload			"reload"
 
 bind paneless move		PGUP		move_page_up		"page up"
 bind paneless move		CTL-B		move_page_up		"page up"
@@ -55,22 +55,24 @@ bind paneless display		zt		flip_line_total		"flip line total"
 
 # Parse options
 declare -A e # extra options for the customization scripts
+declare -A custom_column # custom renderers
 
 [[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
 
-options=$(getopt -o ac:e:lLt:w:h -l help,ansi,custom:,line-number:,no-color,status-line -n "$0" -- "$@") || exit
+options=$(getopt -o ac:C:e:lLt:w:h -l help,ansi,custom:,line-number:,no-color,status-line -n "$0" -- "$@") || exit
 eval set -- "$options"
 
 while [[ $1 != -- ]]; do
 	case $1 in
-		-a|--ansi       ) ansi=1                ; shift   ;;
-		-c|--custom     ) customization=$2      ; shift 2 ;;
+		-a|--ansi       ) ansi=1                                    ; shift   ;;
+		-c|--custom     ) customization=$2                          ; shift 2 ;;
+		-C              ) custom_column[$2]=1                       ; shift 2 ;;
 		-e              ) IFS=$'=' <<<"$2" read -r K V ; e[$K]="$V" ; shift 2 ;;
-		-L              ) overlay_line_number=2 ; shift   ;;
-		--no-color      ) no_color=1            ; shift   ;;
-		--status-line   ) status_line=1         ; shift   ;;
-		-t              ) tab_size=$2           ; shift 2 ;;
-		-w              ) widths+=($2)          ; shift 2 ;;
+		-L              ) overlay_line_number=2                     ; shift   ;;
+		--no-color      ) no_color=1                                ; shift   ;;
+		--status-line   ) status_line=1                             ; shift   ;;
+		-t              ) tab_size=$2                               ; shift 2 ;;
+		-w              ) widths+=($2)                              ; shift 2 ;;
 		-h|--help       )
 				echo "NAME"
 				echo "    paneless - multipane pager"

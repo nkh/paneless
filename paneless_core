@@ -33,15 +33,49 @@ LINES=$(tput lines)
 for((line = 1, pline = top_line ; line <= bottom_line ; line++, pline++))
 	do
 		(( pline < ${#lines[@]} )) &&
-			{ echo -en "\e[$line;0H\e[K" ; echo -n "${lines[pline]}" ; } ||
-			echo -en "\e[$line;0H\e[K$continuation_glyph"
+			{
+			((${#custom_column[@]} == 0)) && { echo -en "\e[$line;0H\e[K" ; echo -n "${lines[pline]}" ; } ||
+				{
+				current_line= source_index=-1
+				 
+				for array_name in ${line_blocks[@]}
+					do
+						((source_index++))
+						
+						((custom_column[$source_index] == 1)) && { get_pane_text pane_text $top_line $line $pline $source_index $array_name ; } ||
+							{
+							declare -n array_ref="$array_name"
+							((pline < ${#array_ref[@]})) && pane_text="${array_ref[pline]}" || pane_text="${padding[source_index]}"
+							}
+						
+						current_line+="$pane_text$separator"
+					done
+				
+				echo -en "\e[$line;0H\e[K" ; echo -n "$current_line$end_padding" ;
+				}
+			} || echo -en "\e[$line;0H\e[K$continuation_glyph"
 	done
 
 update_status
 
 ((overlay_line_number == 1)) && echo -en "\e[H$MAGENTA[$((top_line + 1))$overlay_line_total]$RESET"
 ((overlay_line_number == 2)) && echo -en "\e[$bottom_line;0H$MAGENTA[$((top_line + bottom_line))$overlay_line_total]$RESET"
+
+overlay_text
 }
+
+get_pane_text()
+{
+echo "paneless: calling default get_pane_text makes little sense" ; quit_no_clear
+
+# local text_ref=$1 top_line="$2" line="$3" pline="$4" source_index="$5" array_name="$6"
+
+# declare -n text="$text_ref"
+# declare -n array_ref="$array_name"
+# ((pline < ${#array_ref[@]})) && text="${array_ref[pline]}" || text="${padding[source_index]}"
+}
+
+overlay_text() {  : ; }
 
 update_status() { ((status_line)) && echo -en "\e[$((bottom_line + 2));0H\e[K" ; }
 
