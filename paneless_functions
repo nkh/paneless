@@ -12,7 +12,8 @@ move_page_down()  { (( top_line += LINES )) ; (( top_line > ((max_lines + 1) - L
 move_page_up()    { (( top_line -= LINES )) ; (( top_line < 0 )) && top_line=0 ; list ; }
 move_right()      { (( start_character+=16 )) ; create_panes ; list ; } 
 move_left()       { (( start_character > 0)) && (( start_character = start_character - 16 )) ; create_panes ; list ; } 
-quit()            { tput cnorm ; stty echo ; echo -ne "\e[?25l\e[?25h\e[?1049l" ; rm -rf $fs ; exit ; }
+quit()            { restore_screen ; rm -rf $fs ; exit ; }
+restore_screen()  { tput cnorm ; stty echo ; echo -ne "\e[?25l\e[?25h\e[?1049l" ; }
 quit_no_clear()   { tput cnorm ; stty echo ; rm -rf $fs ; exit ; }
 
 search() { search_string= ; find_next ; }

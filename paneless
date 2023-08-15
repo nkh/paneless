@@ -64,10 +64,11 @@ leader_key='BACKSLASH'
 
 bind paneless paneless		q		quit			"quit"
 bind paneless paneless		Q		quit_no_clear		"quit leaving the panes visible"
-bind paneless paneless		c		k_bindings		"show command bindings"
 
 ((! no_bindings)) &&
 	{
+	bind paneless paneless		c		k_bindings		"show command bindings"
+
 	bind paneless paneless		r		list			"refresh"
 	bind paneless paneless		R		reload			"reload"
 

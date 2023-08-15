@@ -1,7 +1,6 @@
 load_input_streams()
 {
 sources=$#
-
 source_index=-1
 
 for fd in "$@"
@@ -18,7 +17,7 @@ for fd in "$@"
 # format pane contents
 start_character=0 ; create_panes
 
-# display lines and wait for commands
+# display lines
 
 echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis
 top_line=0 ; list ;
@@ -160,6 +159,7 @@ used_columns=0
 
 for ((source_index = 0 ;  source_index < $sources ; source_index++))
 	do
+		# compute padding for each pane
 		padding[source_index]="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 2)' "${pane_columns[source_index]}")"
 		
 		((used_columns += pane_columns[source_index]))
