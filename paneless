@@ -8,10 +8,11 @@ source "$(dirname "$0")/paneless_functions" || { echo "paneless: can't find func
 # Parse options
 declare -A e # extra options for the customization scripts
 declare -A custom_column # custom renderers
+declare -A custom_initial_renderer
 
 [[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
 
-options=$(getopt -o ac:C:e:lLt:w:h -l help,ansi,custom:,line-number:,no-bindings,no-color,status-line -n "$0" -- "$@") || exit
+options=$(getopt -o ac:C:e:I:lLt:w:h -l help,ansi,custom:,line-number:,no-bindings,no-color,status-line -n "$0" -- "$@") || exit
 eval set -- "$options"
 
 while [[ $1 != -- ]]; do
@@ -20,6 +21,8 @@ while [[ $1 != -- ]]; do
 		-c|--custom     ) customization=$2                          ; shift 2 ;;
 		-C              ) custom_column[$2]=1                       ; shift 2 ;;
 		-e              ) IFS=$'=' <<<"$2" read -r K V ; e[$K]="$V" ; shift 2 ;;
+		-I              ) IFS=$'=' <<<"$2" read -r K V
+				  custom_initial_renderer[$K]=$V            ; shift 2 ;;
 		-L              ) overlay_line_number=2                     ; shift   ;;
 		--no-bindings   ) no_bindings=1                             ; shift   ;;
 		--no-color      ) no_color=1                                ; shift   ;;
@@ -37,6 +40,7 @@ while [[ $1 != -- ]]; do
 				echo "    -a|--ansi        ansi input"
 				echo "    -c|--custom      custom script"
 				echo "    -e               custom argument"
+				echo "    -I               custom initial content"
 				echo "    -l|-L            display line number"        
 				echo "    --no-bindings    only quit bindings"
 				echo "    --no-color       do not color text"

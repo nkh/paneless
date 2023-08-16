@@ -24,6 +24,7 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 | -c file    | --custom=file | add custom commands                              |
 | -C column  |               | colum has custom renderer                        |
 | -e="k=v"   |               | store option for custom commands                 |
+| -I         |               |  custom initial content                          |
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |
 |            | --no-bindings | 'quit' bindings only                             |

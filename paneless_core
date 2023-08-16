@@ -11,7 +11,9 @@ for fd in "$@"
 		source_names+=($source_name)
 		source_source+=($fd)
 		
-		readarray $source_name < <(expand --tabs="$tab_size" $fd)
+		[[ "${custom_initial_renderer[$source_index]}" ]] &&
+			readarray $source_name < <(${custom_initial_renderer[$source_index]} | expand --tabs="$tab_size") ||
+			readarray $source_name < <(expand --tabs="$tab_size" $fd)
 	done
 
 # format pane contents
