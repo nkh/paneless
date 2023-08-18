@@ -3,6 +3,22 @@ load_input_streams()
 sources=$#
 source_index=-1
 
+((ansi)) && EXPAND=ansiexpand || EXPAND=expand
+
+for fd in "$@"
+	do
+		((source_index++))
+
+		[[ "${custom_initial_renderer[$source_index]}" ]] &&
+			${custom_initial_renderer[$source_index]} | $EXPAND -t "$tab_size" >$fs/expanded_$source_index &
+
+		[[ -z "${custom_initial_renderer[$source_index]}" ]] &&
+			$EXPAND -t "$tab_size" $fd >$fs/expanded_$source_index &
+	done
+
+wait
+
+source_index=-1
 for fd in "$@"
 	do
 		((source_index++))
@@ -11,9 +27,11 @@ for fd in "$@"
 		source_names+=($source_name)
 		source_source+=($fd)
 		
-		[[ "${custom_initial_renderer[$source_index]}" ]] &&
-			readarray $source_name < <(${custom_initial_renderer[$source_index]} | expand --tabs="$tab_size") ||
-			readarray $source_name < <(expand --tabs="$tab_size" $fd)
+		readarray $source_name <$fs/expanded_$source_index
+
+		# [[ "${custom_initial_renderer[$source_index]}" ]] &&
+		# 	readarray $source_name < <(${custom_initial_renderer[$source_index]} | ansiexpand -t "$tab_size") ||
+		# 	readarray $source_name < <(ansiexpand -t "$tab_size" $fd)
 	done
 
 # format pane contents
@@ -67,7 +85,7 @@ overlay_text
 
 get_pane_text()
 {
-echo "paneless: calling default get_pane_text makes little sense" ; quit_no_clear
+echo "paneless: calling default get_pane_text makes no sense" ; quit_no_clear
 
 # local text_ref=$1 top_line="$2" line="$3" pline="$4" source_index="$5" array_name="$6"
 
@@ -123,6 +141,7 @@ line_blocks=()
 current_color=0
 
 # format input streams to fit panes
+
 source_index=-1
 for source_name in "${source_names[@]}"
 	do
@@ -142,16 +161,13 @@ for source_name in "${source_names[@]}"
 		
 		readarray -t $array_name < \
 			<(\
-			printf "%s" "${source_ref[@]}" | \
-			{
-			((text_length = pane_columns[source_index] - 1))
-			
-			((ansi)) \
-				&& perl -pe 'BEGIN{ use Text::ANSI::WideUtil qw( ta_mbsubstr ) ; use open qw(:std :utf8); } ; chomp ; $_ = "'$color'" . ta_mbsubstr($_ . (" " x 200), '$start_character', '$text_length') . "'$RESET'\n"' \
-				|| perl -pe 'BEGIN{ use open qw(:std :utf8); } ; chomp ; $_ = "'$color'" . substr($_ . (" " x 200), '$start_character', '$text_length') . "'$RESET'\n"'
-			}
+			printf "$color%s" "${source_ref[@]}" | \
+				{
+				((text_length = pane_columns[source_index] - 1))
+				
+				perl -e "$ansi_substr" 500 $start_character $text_length
+				}
 			)
-		
 		declare -n array_ref="$array_name"
 		((max_lines < ${#array_ref[@]})) && max_lines=${#array_ref[@]}
 		
@@ -188,6 +204,68 @@ for((line=0 ; line < max_lines ; line++))
 
 printf "%s\n" "${lines[@]}" >"$serialized_panes"
 }
+
+read -r -d '' ansi_substr <<'EOC'
+use strict ; use warnings ; use Encode ;
+
+while(<STDIN>)
+	{
+	chomp ;
+	print nk_mbsubstr($_ . (" " x $ARGV[0]), $ARGV[1], $ARGV[2] // 0) . "\n" ;
+	}
+
+sub nk_mbsubstr
+{
+my ($string, $start, $end) = @_ ;
+$end += $start ; # length to position
+
+my ($substring, $s_length, $u_length) = ('', 0, 0) ;
+my ($latest_color, $first_color)      = ('') ;
+my ($substr_start, $substr_end)       = (0, 0) ;
+
+my $ANSI = "(\e\[[0-9;]*m)" ;
+
+for my $chunk ( split /$ANSI/, $string )
+	{
+	if($chunk =~ /$ANSI/)
+		{
+		$latest_color = $1 ;
+		$s_length += length($1) ;
+		}
+	else
+		{
+		my $u_chunk = decode('utf8', $chunk) ;
+		my $u_chunk_length = length($u_chunk) ;
+		
+		if((! defined $first_color) && $u_length + $u_chunk_length > $start)
+			{
+			$first_color = $latest_color ;
+			my $s_chunk_substr = substr($u_chunk, 0, ($start - $u_length)) ;
+			$s_chunk_substr = encode('utf8', $s_chunk_substr) ;
+
+			$substr_start = $s_length + length($s_chunk_substr) ;
+			}
+
+		if($u_length + $u_chunk_length >= $end)
+			{
+			my $s_chunk_substr = substr($u_chunk, 0, ($end - $u_length)) ;
+			$s_chunk_substr = encode('utf8', $s_chunk_substr) ;
+
+			$substr_end = $s_length + length($s_chunk_substr) ;
+			last ;
+			}
+		else
+			{
+			$u_length += $u_chunk_length ;
+			$s_length += length($chunk) ;
+			$substr_end = $s_length ;
+			}
+		}
+	}
+
+defined $first_color ? $first_color . substr($string, $substr_start, $substr_end - $substr_start) : ''
+}
+EOC
 
 reload() { source_names=() ; line_blocks=() ; lines=() ; load_input_streams "${ARGV[@]}"  ; }
 
