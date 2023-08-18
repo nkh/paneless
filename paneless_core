@@ -3,7 +3,7 @@ load_input_streams()
 sources=$#
 source_index=-1
 
-((ansi)) && EXPAND=ansiexpand || EXPAND=expand
+((ansi)) && { hash ansiexpand >/dev/null && EXPAND=ansiexpand || EXPAND=expand ; } || EXPAND=expand
 
 for fd in "$@"
 	do

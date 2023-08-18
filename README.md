@@ -10,11 +10,15 @@
 
 # DESCRIPTION
 
-***paneless*** reads its input stream from its arguments (no piping), format them to fit the terminal, and colors them.
-
-Processing multiple large inputs may take time to process, so does input that contains ANSI color codes. 
+***paneless*** reads its input stream from its arguments (no piping), format them to fit the terminal, and colors them. Processing multiple large inputs may take time to process, so does input that contains ANSI color codes. 
 
 Once processed vertical scrolling is fast; horizontal scrolling re-processes all the inputs.
+
+I also use paneless as frontend for https://github.com/nkh/tdiff and https://github.com/nkh/tcol via a simple API which you might find convenient.
+
+## ANSI
+
+*paneless* will display files that contain ANSI codes,f you use the *--ansi* option. You will need to install *ansiexpand* for proper tab expansion.
 
 ## Options
 
@@ -70,8 +74,8 @@ Once processed vertical scrolling is fast; horizontal scrolling re-processes all
 
 - Bash
 - Perl
-	- Text::ANSI::WideUtil (required for input with ANSI colors codes) 
 - FZF
+- ansiexpand (https://github.com/tecolicom/App-ansiexpand) will fail back to *expand*
 
 # INSTALL
 
