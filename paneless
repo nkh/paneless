@@ -1,25 +1,19 @@
 #!/bin/bash
 
-# load libs
-source "$(dirname "$0")/paneless_keyboard"  || { echo "paneless: can't find keyboard library" ; exit 1 ; }
-source "$(dirname "$0")/paneless_core"      || { echo "paneless: can't find core library" ; exit 1 ; }
-source "$(dirname "$0")/paneless_functions" || { echo "paneless: can't find functions library" ; exit 1 ; }
+[[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
+for i in "$@" ; do [[ -d "$i" ]] && { echo "paneless: can't display directories" ; exit 1 ; } ; done
 
 # Parse options
 declare -A e # extra options for the customization scripts
-declare -A custom_column # custom renderers
 declare -A custom_initial_renderer
 
-[[ "$1" ]]  || { echo "paneless: need at least one input" ; exit 1 ; }
-
-options=$(getopt -o ac:C:e:I:lLt:w:h -l help,ansi,custom:,line-number:,no-bindings,no-color,status-line -n "$0" -- "$@") || exit
+options=$(getopt -o ac:e:I:lLt:w:h -l help,ansi,custom:,line-number:,no-bindings,no-color,status-line -n "$0" -- "$@") || exit
 eval set -- "$options"
 
 while [[ $1 != -- ]]; do
 	case $1 in
 		-a|--ansi       ) ansi=1                                    ; shift   ;;
 		-c|--custom     ) customization=$2                          ; shift 2 ;;
-		-C              ) custom_column[$2]=1                       ; shift 2 ;;
 		-e              ) IFS=$'=' <<<"$2" read -r K V ; e[$K]="$V" ; shift 2 ;;
 		-I              ) IFS=$'=' <<<"$2" read -r K V
 				  custom_initial_renderer[$K]=$V            ; shift 2 ;;
@@ -53,11 +47,18 @@ while [[ $1 != -- ]]; do
 done
 shift # -- in argument list to getopt
 
+# load libs
+source "$(dirname "$0")/paneless_keyboard"  || { echo "paneless: can't find keyboard library" ; exit 1 ; }
+source "$(dirname "$0")/paneless_core"      || { echo "paneless: can't find core library" ; exit 1 ; }
+source "$(dirname "$0")/paneless_functions" || { echo "paneless: can't find functions library" ; exit 1 ; }
+
 # Settings
 PANELESS_GLYPH=$'\e[2;30m'
 
-BLACK=$'\e[30m' RED=$'\e[31m'     GREEN=$'\e[32m' YELLOW=$'\e[33m'     DIM_YELLOW=$'\e[2;33m'
-BLUE=$'\e[34m'  MAGENTA=$'\e[35m' CYAN=$'\e[36m'  LIGHT_GREY=$'\e[37m' RESET=$'\e[0m'
+BLACK=$'\e[30m'      RED=$'\e[31m'          GREEN=$'\e[32m'      YELLOW=$'\e[33m'      DIM_YELLOW=$'\e[2;33m'
+BLUE=$'\e[34m'       MAGENTA=$'\e[35m'      CYAN=$'\e[36m'       RESET=$'\e[0m'
+
+DARK_GREY=$'\e[38m'  LIGHT_GREY=$'\e[37m' 
 
 colors=($CYAN $MAGENTA $GREEN $DIM_YELLOW) ; 
 tab_size=8
@@ -105,15 +106,15 @@ bind paneless paneless		Q		quit_no_clear		"quit leaving the panes visible"
 	bind paneless display		zt		flip_line_total		"flip line total"
 	}
 
-# main loop
 
 [[ "$customization" ]] && source "$customization"
 
-ARGV=("$@") # used to reload files
+SOURCES=("$@") SOURCE_INDEXES="$(seq 0 $(( ${#SOURCES[@]} - 1)) )"
 
-load_input_streams "$@"
+load_input_streams
 
-while : ; do winch ; get_key $KEY_TIMEOUT && try key_command ; kbdf ; winch=1 ; done
+command_loop
+
 
 # vim: set filetype=bash:
 

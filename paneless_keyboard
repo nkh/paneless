@@ -1,3 +1,6 @@
+
+command_loop() { while : ; do winch ; get_key $KEY_TIMEOUT && try key_command ; kbdf ; winch=1 ; done ; }
+
 declare -Ag C bindings kbd_trie key_map 
 
 declare -A A=(  [a]=ª [b]=” [c]=© [d]=ð [e]=€ [f]=đ [g]=ŋ [h]=ħ [i]=→ [k]=ĸ [l]=ł [m]=µ [o]=œ [p]=þ [q]='@' [r]=® [s]=ß [t]=þ [u]=↓ [v]=“ [x]=» [y]=← [z]=« ["'"]="´" [.]=·)

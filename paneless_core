@@ -1,209 +1,155 @@
+
 load_input_streams()
 {
-sources=$#
+compute_pane_sizes
+
 source_index=-1
+for fd in "${SOURCES[@]}" ; do
+	(( source_index++ ))
+	custom_render="${custom_initial_renderer[$source_index]}"
 
-((ansi)) && { hash ansiexpand >/dev/null && EXPAND=ansiexpand || EXPAND=expand ; } || EXPAND=expand
-
-for fd in "$@"
-	do
-		((source_index++))
-
-		[[ "${custom_initial_renderer[$source_index]}" ]] &&
-			${custom_initial_renderer[$source_index]} | $EXPAND -t "$tab_size" >$fs/expanded_$source_index &
-
-		[[ -z "${custom_initial_renderer[$source_index]}" ]] &&
-			$EXPAND -t "$tab_size" $fd >$fs/expanded_$source_index &
-	done
+	[[    "$custom_render" ]] && ${custom_initial_renderer[$source_index]} | $EXPAND -t "$tab_size"       >$fs/expanded_$source_index &
+	[[ -z "$custom_render" ]] &&                                             $EXPAND -t "$tab_size" "$fd" >$fs/expanded_$source_index &
+done
 
 wait
+for source_index in $SOURCE_INDEXES ; do
+	<$fs/expanded_$source_index wc -l >$fs/max_$source_index &
+done
 
-source_index=-1
-for fd in "$@"
-	do
-		((source_index++))
-		
-		source_name="source$source_index" 
-		source_names+=($source_name)
-		source_source+=($fd)
-		
-		readarray $source_name <$fs/expanded_$source_index
+wait
+max_lines="$(cat $fs/max_* | sort -rh | head -1)"
 
-		# [[ "${custom_initial_renderer[$source_index]}" ]] &&
-		# 	readarray $source_name < <(${custom_initial_renderer[$source_index]} | ansiexpand -t "$tab_size") ||
-		# 	readarray $source_name < <(ansiexpand -t "$tab_size" $fd)
-	done
+for source_index in $SOURCE_INDEXES ; do
+	(( text_length = pane_columns[source_index] - 1 ))
 
-# format pane contents
-start_character=0 ; create_panes
+	perl -e '$line = $ARGV[0] . (" " x ($ARGV[1] - 1)) ; print "$line\n" for 1 .. $ARGV[2]' \
+		"$continuation_glyph" $text_length $(( $max_lines - $(cat $fs/max_$source_index) )) >$fs/vpad_$source_index &
+done
 
-# display lines
+wait
+for source_index in $SOURCE_INDEXES ; do
+	cat $fs/expanded_$source_index $fs/vpad_$source_index >$fs/vpadded_$source_index &
+done
 
-echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis
-top_line=0 ; list ;
+wait
+create_panes
+
+echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis ; top_line=0 ; list ;
+}
+
+create_panes()
+{
+current_color=0
+
+for source_index in $SOURCE_INDEXES ; do
+	(( no_color )) && color= || { color=${colors[current_color]} ; (( current_color++, current_color >= ${#colors[@]} )) && current_color=0 ; }
+	(( text_length = pane_columns[source_index] - 1 ))
+	
+	<$fs/vpadded_$source_index perl -e "$ansi_substr" 500 $start_character $text_length "$color" >$fs/cut_$source_index &
+done
+
+wait
+perl -e "$ppaste" "$PANELESS_GLYPH│$RESET" $paste_code $fs/cut_* >$fs/joined
+
+<$fs/joined readarray -t lines
 }
 
 list()
 {
 LINES=$(tput lines)
+(( bottom_line = $LINES - status_line ))
 
-((bottom_line = $LINES - status_line))
-
-for((line = 1, pline = top_line ; line <= bottom_line ; line++, pline++))
-	do
-		(( pline < ${#lines[@]} )) &&
-			{
-			((${#custom_column[@]} == 0)) && { echo -en "\e[$line;0H\e[K" ; echo -n "${lines[pline]}" ; } ||
-				{
-				current_line= source_index=-1
-				 
-				for array_name in ${line_blocks[@]}
-					do
-						((source_index++))
-						
-						((custom_column[$source_index] == 1)) && { get_pane_text pane_text $top_line $line $pline $source_index $array_name ; } ||
-							{
-							declare -n array_ref="$array_name"
-							((pline < ${#array_ref[@]})) && pane_text="${array_ref[pline]}" || pane_text="${padding[source_index]}"
-							}
-						
-						current_line+="$pane_text$separator"
-					done
-				
-				echo -en "\e[$line;0H\e[K" ; echo -n "$current_line$end_padding" ;
-				}
-			} || echo -en "\e[$line;0H\e[K$continuation_glyph"
-	done
+for(( line = 1, pline = top_line ; line <= bottom_line ; line++, pline++ )) ; do
+	(( pline < ${#lines[@]} )) && { echo -en "\e[$line;0H\e[K" ; echo -n "${lines[pline]}" ; } || echo -en "\e[$line;0H\e[K$continuation_glyph"
+	overlay_line $line $pline
+done
 
 update_status
 
-((overlay_line_number == 1)) && echo -en "\e[H$MAGENTA[$((top_line + 1))$overlay_line_total]$RESET"
-((overlay_line_number == 2)) && echo -en "\e[$bottom_line;0H$MAGENTA[$((top_line + bottom_line))$overlay_line_total]$RESET"
+(( overlay_line_number == 1 )) && echo -en "\e[H$MAGENTA[$(( top_line + 1 ))$overlay_line_total]$RESET"
+(( overlay_line_number == 2 )) && echo -en "\e[$bottom_line;0H$MAGENTA[$(( top_line + bottom_line ))$overlay_line_total]$RESET"
 
 overlay_text
 }
 
-get_pane_text()
+get_pane_text() { echo "paneless: calling default get_pane_text makes no sense" ; quit_no_clear  ; }
+overlay_line()  {  : ; }
+overlay_text()  {  : ; }
+update_status() { (( status_line )) && echo -en "\e[$(( bottom_line + 2 ));0H\e[K" ; }
+
+compute_pane_sizes()
 {
-echo "paneless: calling default get_pane_text makes no sense" ; quit_no_clear
-
-# local text_ref=$1 top_line="$2" line="$3" pline="$4" source_index="$5" array_name="$6"
-
-# declare -n text="$text_ref"
-# declare -n array_ref="$array_name"
-# ((pline < ${#array_ref[@]})) && text="${array_ref[pline]}" || text="${padding[source_index]}"
-}
-
-overlay_text() {  : ; }
-
-update_status() { ((status_line)) && echo -en "\e[$((bottom_line + 2));0H\e[K" ; }
-
-create_panes()
-{
-((remaining_cols = COLS, remaining_perc = 100, sharing_panes = sources))
 pane_columns=()
+(( remaining_cols = COLS, remaining_perc = 100, sharing_panes = ${#SOURCES[@]} , sources = ${#SOURCES[@]} ))
 
-for w in "${widths[@]}"
-	do
-		if   [[ "$w" =~ [[:digit:]][[:digit:]]$  ]]
-			then { ((wt = w + 1)) ; pane_columns+=($wt) ; ((sharing_panes-- , remaining_cols -= wt, remaining_cols >= 0)) || { echo "paneless: can't fit $w" && exit 1 ; } ; }
-		elif [[ "$w" =~ [[:digit:]][[:digit:]]\%$ ]]
-			then { pane_columns+=($w) ; ((sharing_panes-- , remaining_perc -= ${w:0:-1} , remaining_perc >= 0)) || { echo "paneless: can't fit $w" && exit 1 ; } ; }
-		else pane_columns+=('')
-		fi
-	done
+for w in "${widths[@]}" ; do
+	if   [[ "$w" =~ [[:digit:]][[:digit:]]$  ]] ; then 
+		(( wt = w + 1 ))
+		pane_columns+=($wt)
+		(( sharing_panes-- , remaining_cols -= wt, remaining_cols >= 0 )) || { echo "paneless: can't fit $w" && exit 1 ; }
 
-((sharing_panes > 0)) && 
+	elif [[ "$w" =~ [[:digit:]][[:digit:]]\%$ ]] ; then
+		pane_columns+=($w)
+		(( sharing_panes-- , remaining_perc -= ${w:0:-1} , remaining_perc >= 0 )) || { echo "paneless: can't fit $w" && exit 1 ; }
+
+	else pane_columns+=('')
+	fi
+done
+
+(( sharing_panes > 0 )) && 
 	{
-	((pane_share = ( (remaining_cols * remaining_perc) / (sharing_panes * 100) ) - 1)) || pane_share=0
-	((pane_share <= 0)) && { echo "paneless: not enought room" ; exit 1 ; }
+	(( pane_share = ( (remaining_cols * remaining_perc) / (sharing_panes * 100) ) - 1 )) || pane_share=0
+	(( pane_share <= 0 )) && { echo "paneless: not enought room" ; exit 1 ; }
 	}
 
-for ((source_index = 0 ;  source_index < $sources ; source_index++))
-	do
-		[[ "${pane_columns[source_index]}" ]] &&
-			{
-			[[ "${pane_columns[source_index]}" =~ [[:digit:]][[:digit:]]% ]] &&
-				(( pane_columns[source_index] = remaining_cols * ${pane_columns[source_index]:0:-1}  / 100 ))
-			
-			true
-			} ||
-			{
-			((pane_columns[source_index] = $pane_share))
-			}
-	done
-
-separator=$"$PANELESS_GLYPH│$RESET"
-continuation_glyph=$"$PANELESS_GLYPH~$RESET"
-
-lines=()
-line_blocks=()
-current_color=0
-
-# format input streams to fit panes
-
-source_index=-1
-for source_name in "${source_names[@]}"
-	do
-		((no_color)) && color= ||
-			{
-			color=${colors[current_color]}
-			((current_color++, current_color >= ${#colors[@]})) && current_color=0
-			}
+for (( source_index = 0 ;  source_index < $sources ; source_index++ )) ;do
+	[[ "${pane_columns[source_index]}" ]] &&
+		{
+		[[ "${pane_columns[source_index]}" =~ [[:digit:]][[:digit:]]% ]] &&
+			(( pane_columns[source_index] = remaining_cols * ${pane_columns[source_index]:0:-1}  / 100 ))
 		
-		((source_index++))
-		declare -n source_ref="$source_name"
-		
-		array_name="lines$source_index" 
-		line_blocks+=($array_name)
-		
-		declare -n source_ref="$source_name"
-		
-		readarray -t $array_name < \
-			<(\
-			printf "$color%s" "${source_ref[@]}" | \
-				{
-				((text_length = pane_columns[source_index] - 1))
-				
-				perl -e "$ansi_substr" 500 $start_character $text_length
-				}
-			)
-		declare -n array_ref="$array_name"
-		((max_lines < ${#array_ref[@]})) && max_lines=${#array_ref[@]}
-		
-	done
+		true
+		} ||
+		{
+		(( pane_columns[source_index] = $pane_share ))
+		}
+done
 
-used_columns=0
+for (( source_index = 0 ;  source_index < $sources ; source_index++ )) ;do
+	# compute padding for each pane
+	padding[source_index]="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 2)' "${pane_columns[source_index]}")"
+	
+	(( used_columns += pane_columns[source_index] ))
+done
 
-for ((source_index = 0 ;  source_index < $sources ; source_index++))
-	do
-		# compute padding for each pane
-		padding[source_index]="$continuation_glyph$(perl -e 'print " " x ($ARGV[0] - 2)' "${pane_columns[source_index]}")"
-		
-		((used_columns += pane_columns[source_index]))
-	done
-
-end_padding="$(perl -e 'print " " x $ARGV[0]' $((COLS - used_columns)))"
-
-# join formatted input
-for((line=0 ; line < max_lines ; line++))
-	do
-		source_index=-1
-		for array_name in ${line_blocks[@]}
-			do
-				((source_index++))
-				
-				declare -n array_ref="$array_name"
-				((line < ${#array_ref[@]})) && pane_text="${array_ref[line]}" || pane_text="${padding[source_index]}"
-				
-				lines[$line]+="$pane_text$separator"
-			done
-		
-		lines[$line]+="$end_padding"
-	done
-
-printf "%s\n" "${lines[@]}" >"$serialized_panes"
+end_padding="$(perl -e 'print " " x $ARGV[0]' $(( COLS - used_columns )))"
 }
+
+
+read -r -d '' ppaste <<'EOC'
+use strict ; use warnings ;
+use FileHandle ;
+
+my $separator = shift @ARGV  // '' ;
+
+my @fhs = map { FileHandle->new("< $_") or die "paneless: can't open '$_'\n"} @ARGV ;
+
+while(1)
+	{
+	my ($reads, $line) = (0, '') ;
+
+	for my $fh (@fhs)
+		{
+		$_ = $fh->getline ;
+		$line .= defined $_ ? do { $reads++ ; chomp ; "$_$separator" } : $separator ;
+		}
+	
+	last unless $reads ;
+
+	print $line, "\n" ;
+	}
+EOC
 
 read -r -d '' ansi_substr <<'EOC'
 use strict ; use warnings ; use Encode ;
@@ -211,7 +157,7 @@ use strict ; use warnings ; use Encode ;
 while(<STDIN>)
 	{
 	chomp ;
-	print nk_mbsubstr($_ . (" " x $ARGV[0]), $ARGV[1], $ARGV[2] // 0) . "\n" ;
+	print( ($ARGV[3] // '') . nk_mbsubstr($_ . (" " x $ARGV[0]), $ARGV[1], $ARGV[2] // 0) . "\n") ;
 	}
 
 sub nk_mbsubstr
@@ -242,15 +188,15 @@ for my $chunk ( split /$ANSI/, $string )
 			$first_color = $latest_color ;
 			my $s_chunk_substr = substr($u_chunk, 0, ($start - $u_length)) ;
 			$s_chunk_substr = encode('utf8', $s_chunk_substr) ;
-
+			
 			$substr_start = $s_length + length($s_chunk_substr) ;
 			}
-
+		
 		if($u_length + $u_chunk_length >= $end)
 			{
 			my $s_chunk_substr = substr($u_chunk, 0, ($end - $u_length)) ;
 			$s_chunk_substr = encode('utf8', $s_chunk_substr) ;
-
+			
 			$substr_end = $s_length + length($s_chunk_substr) ;
 			last ;
 			}
@@ -263,7 +209,7 @@ for my $chunk ( split /$ANSI/, $string )
 		}
 	}
 
-defined $first_color ? $first_color . substr($string, $substr_start, $substr_end - $substr_start) : ''
+defined $first_color ? $first_color . substr($string, $substr_start, $substr_end - $substr_start) . "\e[m" : ''
 }
 EOC
 
@@ -271,7 +217,7 @@ reload() { source_names=() ; line_blocks=() ; lines=() ; load_input_streams "${A
 
 geo_winch() { geometry ; WCOLS=$COLS ; WLINES=$LINES ; }
 geometry()  { { read LINES ; read COLS ; } < <(tput lines cols) ; }
-winch()     { ((winch)) || return ; geometry ; ((WCOLS != COLS)) && { create_panes ; list ; true ; } || ((WLINES != LINES)) && list ; WCOLS=$COLS ; WLINES=$LINES ; }
+winch()     { (( winch )) || return ; geometry ; (( WCOLS != COLS )) && { create_panes ; list ; true ; } || (( WLINES != LINES )) && list ; WCOLS=$COLS ; WLINES=$LINES ; }
 
 pdhn()      { echo "$@" ; read -sn1 ; }
 try()       { exec 9>&2 2>"$fs/log" ; "$@" ; exec 2>&9 ; [[ -s $fs/log ]] && try_errorp ; }
@@ -281,9 +227,12 @@ try_errorp(){ pdhn  "$(cat $fs/log)" ; tmux popup -w 80% "$(try_error)" ; }
 prompt()    { exec 2>&9 ; stty echo ; echo -ne "\e[H\e[K$MAGENTA\e[?25h" ; read -e -rp "$@" ; echo -ne '\e[m' ; stty -echo ; tput civis ; exec 2>"$fs/log" ; }
 
 # core setup
+continuation_glyph=$"$DARK_GREY$PANELESS_GLYPH~$RESET"
+(( ansi )) && { hash ansiexpand >/dev/null && EXPAND=ansiexpand || EXPAND=expand ; } || EXPAND=expand
+
+start_character=0
 
 fs="$(mktemp -u -p /tmp/$USER paneless_XXXXXX)" ; mkdir -p $fs # work directory
-serialized_panes="$fs/serialized_panes"
 
 geo_winch   # save terminal size
 

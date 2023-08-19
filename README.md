@@ -10,15 +10,15 @@
 
 # DESCRIPTION
 
-***paneless*** reads its input stream from its arguments (no piping), format them to fit the terminal, and colors them. Processing multiple large inputs may take time to process, so does input that contains ANSI color codes. 
-
-Once processed vertical scrolling is fast; horizontal scrolling re-processes all the inputs.
+***paneless*** reads its input stream from its arguments (no piping), format them to fit the terminal, and colors them.  
 
 I also use paneless as frontend for https://github.com/nkh/tdiff and https://github.com/nkh/tcol via a simple API which you might find convenient.
 
 ## ANSI
 
-*paneless* will display files that contain ANSI codes,f you use the *--ansi* option. You will need to install *ansiexpand* for proper tab expansion.
+*paneless* cwill display files that contain ANSI codes if you use the *--ansi* option.
+
+Install *ansiexpand* for proper tab expansion; obviously *ansiexpand* is slower than expand so you may notice some small delay. 
 
 ## Options
 
@@ -26,7 +26,6 @@ I also use paneless as frontend for https://github.com/nkh/tdiff and https://git
 | ---------- | ------------- | ------------------------------------------------ |
 | -a         | --ansi        | input contains ANSI color code                   |
 | -c file    | --custom=file | add custom commands                              |
-| -C column  |               | colum has custom renderer                        |
 | -e="k=v"   |               | store option for custom commands                 |
 | -I         |               |  custom initial content                          |
 | -l         | --line-number | overlay the top line number                      |
@@ -75,7 +74,7 @@ I also use paneless as frontend for https://github.com/nkh/tdiff and https://git
 - Bash
 - Perl
 - FZF
-- ansiexpand (https://github.com/tecolicom/App-ansiexpand) will fail back to *expand*
+- ansiexpand (https://github.com/tecolicom/App-ansiexpand), falls back to *expand*
 
 # INSTALL
 
