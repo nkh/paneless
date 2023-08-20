@@ -18,7 +18,7 @@ I also use paneless as frontend for https://github.com/nkh/tdiff and https://git
 
 *paneless* cwill display files that contain ANSI codes if you use the *--ansi* option.
 
-Install *ansiexpand* for proper tab expansion; obviously *ansiexpand* is slower than expand so you may notice some small delay. 
+Install *ansiexpand* for proper tab expansion; *ansiexpand* is slower than *expand* so you may notice some small delay. 
 
 ## Options
 
@@ -27,13 +27,15 @@ Install *ansiexpand* for proper tab expansion; obviously *ansiexpand* is slower 
 | -a         | --ansi        | input contains ANSI color code                   |
 | -c file    | --custom=file | add custom commands                              |
 | -e="k=v"   |               | store option for custom commands                 |
-| -I         |               |  custom initial content                          |
+| -g         |               | generate and exit                                |
+| -I         |               | custom initial content                           |
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |
 |            | --no-bindings | 'quit' bindings only                             |
 |            | --no-color    | do not color text                                |
 |            | --status-line | reserve space for status line                    |
 | -t=tabsize |               | set tab size (8 default)                         |
+| -T=size    |               | set terminal size                                |
 | -w         |               | size in characters or percent                    |
 | -h         | --help        | display help                                     |
 

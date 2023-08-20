@@ -59,12 +59,12 @@ for source_index in $SOURCE_INDEXES ; do
 	
 	
 	<$fs/vpadded_$source_index perl -e "$ansi_substr" 500 $start_character $text_length "$color" >$fs/cut_$source_index &
-	
 done
 
 wait
-
 perl -e "$ppaste" "$PANELESS_GLYPH│$RESET" $fs/cut_* >$fs/joined
+
+(( generate )) && { echo "paneless: generated in '$fs/joined'" ; exit ; }
 
 <$fs/joined readarray -t lines
 }
@@ -100,7 +100,7 @@ compute_pane_sizes()
 pane_columns=()
 used_columns=0
 
-(( remaining_cols = COLS, remaining_perc = 100, sharing_panes = ${#SOURCES[@]} , sources = ${#SOURCES[@]} ))
+(( remaining_cols = ${terminal_size:-$COLS}, remaining_perc = 100, sharing_panes = ${#SOURCES[@]} , sources = ${#SOURCES[@]} ))
 
 for w in "${widths[@]}" ; do
 	if   [[ "$w" =~ [[:digit:]][[:digit:]]$  ]] ; then 
