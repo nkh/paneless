@@ -106,7 +106,6 @@ bind paneless paneless		Q		quit_no_clear		"quit leaving the panes visible"
 	bind paneless display		zt		flip_line_total		"flip line total"
 	}
 
-
 [[ "$customization" ]] && source "$customization"
 
 SOURCES=("$@") SOURCE_INDEXES="$(seq 0 $(( ${#SOURCES[@]} - 1)) )"

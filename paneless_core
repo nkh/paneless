@@ -1,6 +1,15 @@
 
+reload_input_streams()
+{
+exec 2>&1
+SOURCES=("$@") SOURCE_INDEXES="$(seq 0 $(( ${#SOURCES[@]} - 1)) )"
+
+load_input_streams
+}
+
 load_input_streams()
 {
+rm -f $fs/*
 compute_pane_sizes
 
 source_index=-1
@@ -33,6 +42,7 @@ for source_index in $SOURCE_INDEXES ; do
 done
 
 wait
+
 create_panes
 
 echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis ; top_line=0 ; list ;
@@ -40,17 +50,21 @@ echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis ; top_line=0 ; list ;
 
 create_panes()
 {
+lines=()
 current_color=0
 
 for source_index in $SOURCE_INDEXES ; do
 	(( no_color )) && color= || { color=${colors[current_color]} ; (( current_color++, current_color >= ${#colors[@]} )) && current_color=0 ; }
 	(( text_length = pane_columns[source_index] - 1 ))
 	
+	
 	<$fs/vpadded_$source_index perl -e "$ansi_substr" 500 $start_character $text_length "$color" >$fs/cut_$source_index &
+	
 done
 
 wait
-perl -e "$ppaste" "$PANELESS_GLYPH│$RESET" $paste_code $fs/cut_* >$fs/joined
+
+perl -e "$ppaste" "$PANELESS_GLYPH│$RESET" $fs/cut_* >$fs/joined
 
 <$fs/joined readarray -t lines
 }
@@ -61,8 +75,11 @@ LINES=$(tput lines)
 (( bottom_line = $LINES - status_line ))
 
 for(( line = 1, pline = top_line ; line <= bottom_line ; line++, pline++ )) ; do
-	(( pline < ${#lines[@]} )) && { echo -en "\e[$line;0H\e[K" ; echo -n "${lines[pline]}" ; } || echo -en "\e[$line;0H\e[K$continuation_glyph"
-	overlay_line $line $pline
+	overlay_line $line $pline ||
+		{
+		(( pline < ${#lines[@]} )) && { echo -en "\e[$line;1H\e[K" ; echo -n "${lines[pline]}" ; } || echo -en "\e[$line;1H\e[K$continuation_glyph"
+		}
+
 done
 
 update_status
@@ -74,13 +91,15 @@ overlay_text
 }
 
 get_pane_text() { echo "paneless: calling default get_pane_text makes no sense" ; quit_no_clear  ; }
-overlay_line()  {  : ; }
+overlay_line()  {  return 1 ; }
 overlay_text()  {  : ; }
 update_status() { (( status_line )) && echo -en "\e[$(( bottom_line + 2 ));0H\e[K" ; }
 
 compute_pane_sizes()
 {
 pane_columns=()
+used_columns=0
+
 (( remaining_cols = COLS, remaining_perc = 100, sharing_panes = ${#SOURCES[@]} , sources = ${#SOURCES[@]} ))
 
 for w in "${widths[@]}" ; do
@@ -99,7 +118,7 @@ done
 
 (( sharing_panes > 0 )) && 
 	{
-	(( pane_share = ( (remaining_cols * remaining_perc) / (sharing_panes * 100) ) - 1 )) || pane_share=0
+	(( pane_share = (remaining_cols * remaining_perc) / (sharing_panes * 100) )) || pane_share=0
 	(( pane_share <= 0 )) && { echo "paneless: not enought room" ; exit 1 ; }
 	}
 
