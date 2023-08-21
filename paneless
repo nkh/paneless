@@ -117,6 +117,5 @@ load_input_streams
 
 command_loop
 
-
 # vim: set filetype=bash:
 
