@@ -10,13 +10,13 @@
 
 # DESCRIPTION
 
-***paneless*** reads its input stream from its arguments (no piping), format them to fit the terminal, and colors them.  
+***paneless*** reads its input stream from its arguments (no piping), formats them to fit the terminal, and colors them.
 
-I also use paneless as frontend for https://github.com/nkh/tdiff and https://github.com/nkh/tcol via a simple API which you might find convenient.
+I also use paneless as a frontend for https://github.com/nkh/tdiff and https://github.com/nkh/tcol via a simple API which you might find convenient.
 
 ## ANSI
 
-*paneless* cwill display files that contain ANSI codes if you use the *--ansi* option.
+*paneless* will display files that contain ANSI codes if you use the *--ansi* option.
 
 Install *ansiexpand* for proper tab expansion; *ansiexpand* is slower than *expand* so you may notice some small delay. 
 
@@ -24,7 +24,7 @@ Install *ansiexpand* for proper tab expansion; *ansiexpand* is slower than *expa
 
 | short      | long          | function                                         |
 | ---------- | ------------- | ------------------------------------------------ |
-| -a         | --ansi        | input contains ANSI color code                   |
+| -a         | --ansi        | input contains ANSI color codes                  |
 | -c file    | --custom=file | add custom commands                              |
 | -e="k=v"   |               | store option for custom commands                 |
 | -g         |               | generate and exit                                |
@@ -48,11 +48,11 @@ Install *ansiexpand* for proper tab expansion; *ansiexpand* is slower than *expa
 | c       | show command bindings          |
 | r       | refresh                        |
 | R       | reload                         |
-| CTL-B   | page down                      |
-| PGUP    | page down                      |
-| SPACE   | page up                        |
-| PGDN    | page up                        |
-| CTL-F   | page up                        |
+| CTL-B   | page up                        |
+| PGUP    | page up                        |
+| SPACE   | page down                      |
+| PGDN    | page down                      |
+| CTL-F   | page down                      |
 | j       | scroll down                    |
 | k       | scroll up                      |
 | DOWN    | scroll down                    |
@@ -63,7 +63,7 @@ Install *ansiexpand* for proper tab expansion; *ansiexpand* is slower than *expa
 | RIGHT   | move right                     |
 | h       | move left                      |
 | LEFT    | move left                      |
-| /       | searn                          |
+| /       | search                         |
 | n       | find next                      |
 | N       | find previous                  |
 | gff     | fzf find                       |
@@ -93,7 +93,7 @@ You can change the color used by *paneless* as well as the bindings (vim-like by
     Khemir Nadim ibn Hamouda
     https://github.com/nkh
     CPAN ID: NKH
-    
+
 # LICENCE
 
 	© Nadim Khemir 2023, Artistic licence 2.0
