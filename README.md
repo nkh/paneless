@@ -28,6 +28,7 @@ Install *ansiexpand* for proper tab expansion; *ansiexpand* is slower than *expa
 | -c file    | --custom=file | add custom commands                              |
 | -e="k=v"   |               | store option for custom commands                 |
 | -g         |               | generate and exit                                |
+| -G         |               | generate, echo name only, and exit               |
 | -I         |               | custom initial content                           |
 | -l         | --line-number | overlay the top line number                      |
 | -L         |               | overlay the bottom line number                   |

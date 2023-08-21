@@ -7,7 +7,7 @@ for i in "$@" ; do [[ -d "$i" ]] && { echo "paneless: can't display directories"
 declare -A e # extra options for the customization scripts
 declare -A custom_initial_renderer
 
-options=$(getopt -o ac:e:gI:lLt:T:w:h -l help,ansi,custom:,line-number:,no-bindings,no-color,status-line -n "$0" -- "$@") || exit
+options=$(getopt -o ac:e:gGI:lLt:T:w:h -l help,ansi,custom:,line-number:,no-bindings,no-color,status-line -n "$0" -- "$@") || exit
 eval set -- "$options"
 
 while [[ $1 != -- ]]; do
@@ -16,6 +16,7 @@ while [[ $1 != -- ]]; do
 		-c|--custom     ) customization=$2                          ; shift 2 ;;
 		-e              ) IFS=$'=' <<<"$2" read -r K V ; e[$K]="$V" ; shift 2 ;;
 		-g              ) generate=1                                ; shift   ;;
+		-G              ) generate_name_only=1                      ; shift   ;;
 		-I              ) IFS=$'=' <<<"$2" read -r K V
 				  custom_initial_renderer[$K]=$V            ; shift 2 ;;
 		-L              ) overlay_line_number=2                     ; shift   ;;

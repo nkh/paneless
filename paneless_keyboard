@@ -79,7 +79,7 @@ keys_command="$keys_command$REPLY" ; (( keys_in++)) #; pdhn "[$COUNT] <$keys_com
 CMD_COLS=150
 
 kbdf()      { while read -t 0.01 ; do : ; done ; REPLY= ; }
-k_bindings(){ ((pop_kbindings)) && k_bpop || k_bfull ; echo -en '\e[?1049h' ; stty -echo ; tput civis ; list ; }
+k_bindings(){ ((pop_kbindings)) && k_bpop || k_bfull ; alt_screen ; list ; }
 
 k_bfull()   { tcpreview ; exec 2>&9 ; k_bgen | fzf ; exec 2>"$fs/log" ; true ; }
 k_bpop()    { k_bgen | fzf-tmux -w 90% -h 90% $fzf_opt ; true ; }

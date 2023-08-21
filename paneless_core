@@ -45,7 +45,7 @@ wait
 
 create_panes
 
-echo -en '\e[?1049h\e[2J' ; stty -echo ; tput civis ; top_line=0 ; list ;
+echo -en '\e[2J' ; alt_screen ; top_line=0 ; list ;
 }
 
 create_panes()
@@ -65,6 +65,7 @@ wait
 perl -e "$ppaste" "$PANELESS_GLYPH│$RESET" $fs/cut_* >$fs/joined
 
 (( generate )) && { echo "paneless: generated in '$fs/joined'" ; exit ; }
+(( generate_name_only )) && { echo "$fs/joined" ; exit ; }
 
 <$fs/joined readarray -t lines
 }
@@ -234,16 +235,15 @@ EOC
 
 reload() { source_names=() ; line_blocks=() ; lines=() ; load_input_streams "${ARGV[@]}"  ; }
 
-geo_winch() { geometry ; WCOLS=$COLS ; WLINES=$LINES ; }
-geometry()  { { read LINES ; read COLS ; } < <(tput lines cols) ; }
-winch()     { (( winch )) || return ; geometry ; (( WCOLS != COLS )) && { create_panes ; list ; true ; } || (( WLINES != LINES )) && list ; WCOLS=$COLS ; WLINES=$LINES ; }
-
-pdhn()      { echo "$@" ; read -sn1 ; }
-try()       { exec 9>&2 2>"$fs/log" ; "$@" ; exec 2>&9 ; [[ -s $fs/log ]] && try_errorp ; }
-try_error() { echo "echo -ne '\e[2J\e[H\e[31m' ; cat $fs/log | tee -a $fs/errors_log && rm $fs/log" ; }
-try_errorp(){ pdhn  "$(cat $fs/log)" ; tmux popup -w 80% "$(try_error)" ; }
-
-prompt()    { exec 2>&9 ; stty echo ; echo -ne "\e[H\e[K$MAGENTA\e[?25h" ; read -e -rp "$@" ; echo -ne '\e[m' ; stty -echo ; tput civis ; exec 2>"$fs/log" ; }
+geo_winch()  { geometry ; WCOLS=$COLS ; WLINES=$LINES ; }
+geometry()   { { read LINES ; read COLS ; } < <(tput lines cols) ; }
+winch()      { (( winch )) || return ; geometry ; (( WCOLS != COLS )) && { create_panes ; list ; true ; } || (( WLINES != LINES )) && list ; WCOLS=$COLS ; WLINES=$LINES ; }
+pdhn()       { echo "$@" ; read -sn1 ; }
+try()        { exec 9>&2 2>"$fs/log" ; "$@" ; exec 2>&9 ; [[ -s $fs/log ]] && try_errorp ; }
+try_error()  { echo "echo -ne '\e[2J\e[H\e[31m' ; cat $fs/log | tee -a $fs/errors_log && rm $fs/log" ; }
+try_errorp() { pdhn  "$(cat $fs/log)" ; tmux popup -w 80% "$(try_error)" ; }
+prompt()     {  exec 2>&9 ; stty echo ; echo -ne "\e[H\e[K$MAGENTA\e[?25h" ; read -e -rp "$@" ; echo -ne '\e[m' ; stty -echo ; tput civis ; exec 2>"$fs/log" ; }
+alt_screen() { echo -en '\e[?1049h' ; stty -echo ; tput civis ; }
 
 # core setup
 continuation_glyph=$"$DARK_GREY$PANELESS_GLYPH~$RESET"

@@ -63,8 +63,7 @@ for source_name in "${source_names[@]}"
 
 exec 2>"$fs/log"
 
-echo -en '\e[?1049h' ; stty -echo ; tput civis
-list
+alt_screen ; list
 }
 
 # vim: set filetype=bash:
