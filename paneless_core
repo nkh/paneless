@@ -38,10 +38,8 @@ done
 
 wait
 for source_index in $SOURCE_INDEXES ; do
-	cat $fs/expanded_$source_index $fs/vpad_$source_index >$fs/vpadded_$source_index &
+	cat $fs/expanded_$source_index $fs/vpad_$source_index >$fs/vpadded_$source_index
 done
-
-wait
 
 create_panes
 
@@ -189,7 +187,7 @@ my ($substring, $s_length, $u_length) = ('', 0, 0) ;
 my ($latest_color, $first_color)      = ('') ;
 my ($substr_start, $substr_end)       = (0, 0) ;
 
-my $ANSI = "(\e\[[0-9;]*m)" ;
+my $ANSI = "((?:\e\[[0-9;]*m)+)" ;
 
 for my $chunk ( split /$ANSI/, $string )
 	{
