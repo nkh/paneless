@@ -27,6 +27,7 @@ Install *ansiexpand* for proper tab expansion; *ansiexpand* is slower than *expa
 | -a         | --ansi        | input contains ANSI color codes                  |
 | -c file    | --custom=file | add custom commands                              |
 | -e="k=v"   |               | store option for custom commands                 |
+| -E=file    |               | read option for custom commands                  |
 | -g         |               | generate and exit                                |
 | -G         |               | generate, echo name only, and exit               |
 | -I         |               | custom initial content                           |

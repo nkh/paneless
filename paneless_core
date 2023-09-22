@@ -55,7 +55,6 @@ for source_index in $SOURCE_INDEXES ; do
 	(( no_color )) && color= || { color=${colors[current_color]} ; (( current_color++, current_color >= ${#colors[@]} )) && current_color=0 ; }
 	(( text_length = pane_columns[source_index] - 1 ))
 	
-	
 	<$fs/vpadded_$source_index perl -e "$ansi_substr" 500 $start_character $text_length "$color" >$fs/cut_$source_index &
 done
 

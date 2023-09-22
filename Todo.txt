@@ -1,5 +1,9 @@
 issue: scrolling right messes up display
 
+feature: replace overlay_line with custom_draw plus overlay function
+		overlay_line takes over the line drawing but sometimes we
+		want the paneless line drawing and just overlay some text
+
 #align panes right
 	workaround give 100% to rest
 
@@ -9,6 +13,8 @@ fixed header lines
 	per pane
 		display stream name
 		
+no scroll after last line
+
 watch files
 	via external app that sends signal instead for internal implementation
 	reload specific file
