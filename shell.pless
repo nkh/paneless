@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# usage: paneless --no-color  --no-bindings -c shell.pless  <(:)
+
+# TODO: extract paneless keyboard handling to own module
+
+# TODO: direct access to paneless buffers, or set overlay lines in a buffer to avoid function calls
+# TODO: paneless writes to only some lines, allows overlay to what's present on the screen
+
+
+bind 		normal	shell	mode		':'		to_command_mode	"to command mode"
+bind 		normal	shell	mode		i		to_insert_mode	"to insert mode"
+bind 		normal	shell	mode		ESCAPE		to_insert_mode	"to normal mode"
+bind 		normal	shell	move		DOWN		move_down_arrow	"scroll down"
+bind 		normal	shell	move		UP		move_up_arrow	"scroll up"
+bind 		normal	shell	test		t		test		"test"
+
+bind 		command	shell	command		q		quit		"quit"
+bind 		command	shell	mode		ESCAPE		to_normal_mode	"to normal mode"
+
+bind 		insert	shell	mode		ESCAPE		to_normal_mode	"to normal mode"
+bind 		insert	shell	completion	TAB		completion	"completion"
+bind 		insert	shell	insert		SPACE		insert_space	"handle SPACE"
+bind 		insert	shell	insert		BACKSPACE	backspace	"handle BACKSPACE"
+bind 		insert	shell	insert		ENTER		enter		"handle ENTER"
+bind 		insert	shell	insert		DEFAULT		insert_char	"insert character"
+bind 		insert	shell	move		UP		do_nothing	"do nothing"
+bind 		insert	shell	move		DOWN		do_nothing	"do nothing"
+bind 		insert	shell	move		LEFT		do_nothing	"do nothing"
+bind 		insert	shell	move		RIGHT		do_nothing	"do nothing"
+
+
+test()
+{
+reload_input_streams README.md
+goto_last_line
+}
+
+
+unbind normal q
+bind_use_mode insert
+
+{ echo "c:" ; declare -p kbd_trie ; } > >(rd -c A)
+
+declare -A command_history
+
+command_current=
+command_backup=
+
+to_normal_mode()  { bind_use_mode normal  ; prompt='  ' command_backup="$command_current" ; list ; }
+to_command_mode() { bind_use_mode command ; prompt=':'  command_backup="$command_current" command_current= ; list ; }
+to_insert_mode()  { bind_use_mode insert  ; prompt='> ' command_current="$command_backup" ; list ; }
+
+kbd_handle_escape 0 # use ESCAPE to change to normal mode
+
+prompt='> ' command_current=
+
+completion()   { completion=$(get_completion "$command_current") && curent_command+="$completion" ; list ; }
+insert_space() { command_current+=' ' ; list ; }
+backspace()    { command_current=${command_current%?} ; list ; }
+enter()        { command_history+=command_current command_current= ; list ; }
+insert_char()  { command_current+="$REPLY" ; list ; }
+
+overlay_line() { [[ "$1" == "$LINES" ]] && echo -en "\e[$1;0H\e[2K$prompt$command_current\e[7;97m \e[m" && return 0 || return 1  ;}
+
+get_completion()
+{
+# get called when tab is pressed, in both normal and insertion mode
+
+# use native bash completion for commands
+
+echo COMPLETION
+}
+
+# vim: set ft=bash:
+

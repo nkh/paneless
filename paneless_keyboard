@@ -1,38 +1,57 @@
 
-command_loop() { while : ; do winch ; get_key $KEY_TIMEOUT && try key_command ; kbdf ; winch=1 ; done ; }
+command_loop() { while : ; do winch ; get_key $KEY_TIMEOUT && try key_command ; kbd_flush ; winch=1 ; done ; }
 
-declare -Ag C bindings kbd_trie key_comand_override 
+kbd_handle_escape=1 # ESCAPE resets command buffer
+kbd_handle_escape() { kbd_handle_escape="$1" ; }
+
+kbd_handle_count=1 # count is handled internally
+kbd_handle_count() { kbd_handle_count="$1" ; }
+
+kbd_command_override= # function that overrides the keyboard bindings 
+kbd_command_override() { kbd_command_override="$1" ; }
+
+bind_mode=normal # default bind mode
+bind_use_mode() { bind_mode="$1" ; }
+
+declare -Ag kbd_C bindings kbd_trie
 
 declare -A A=(  [a]=ª [b]=” [c]=© [d]=ð [e]=€ [f]=đ [g]=ŋ [h]=ħ [i]=→ [k]=ĸ [l]=ł [m]=µ [o]=œ [p]=þ [q]='@' [r]=® [s]=ß [t]=þ [u]=↓ [v]=“ [x]=» [y]=← [z]=« ["'"]="´" [.]=·)
 declare -A LA=( [ª]=a [”]=b [©]=c [ð]=d [€]=e [đ]=f [ŋ]=g [ħ]=h [→]=i [ĸ]=k [ł]=l [µ]=m [œ]=o [þ]=p ['@']=q [®]=r [ß]=s [þ]=t [↓]=u [“]=v [»]=x [←]=y [«]=z ["´"]="'" [·]='.')
 declare -A SA=( [a]=º [b]=’ [c]=© [d]=Ð [e]=¢ [f]=ª [g]=Ŋ [h]=Ħ [i]=ı [k]='&' [l]=Ł [m]=º [o]=Œ [p]=Þ [q]=Ω [r]=® [s]=§ [t]=Þ [u]=↑ [v]=‘ [x]='>' [y]=¥ [z]='<' ["'"]=× [.]=˙ [0]=° [/]=÷)
 declare -A LSA=([º]=a [’]=b [©]=c [Ð]=d [¢]=e [ª]=f [Ŋ]=g [Ħ]=h [ı]=i ['&']=k [Ł]=l [º]=m [Œ]=o [Þ]=p [Ω]=q [®]=r [§]=s [Þ]=t [↑]=u [‘]=v ['>']=x [¥]=y ['<']=z [×]="'" [˙]=. [°]=0 [÷]=/)
 
-set_key_command_override() { key_command_override="$1" ; }
-clear_keys() { keys_in= keys_command= HAS_COUNT= COUNT= REPLY= ; }
-
 bind()
 {
+local mode=
+[[ $# == 6 ]] && { mode="$1" ; shift ; } || mode=normal
+
 local map="$1" section="$2" keys="$3" command="$4" help="$5" shortcut= dscut=
+
 local keysa=( $keys )
 
 for key in "${keysa[@]}"
 	do
 		shortcut="$shortcut$key" 
 		
-		((bind_check)) && [[ "${kbd_trie[$shortcut]}" =~ [[:alpha:]] ]] && \
-			echo "paneless: bind: map: $map, section: $section, keys:'$keys', command: '$command' is overriding '${kbd_trie[$shortcut]}'" 
+		((bind_check)) && [[ "${kbd_trie[$mode-$shortcut]}" =~ [[:alpha:]] ]] && \
+			echo "paneless: bind: mode: $mode, map: $map, section: $section, keys:'$keys', command: '$command' is overriding '${kbd_trie[$shortcut]}'" 
 		
-		((kbd_trie[$shortcut]++)) 
+		((kbd_trie[$mode-$shortcut]++)) 
 		{ [[ -n "${LA[$key]}"  ]] && dscut="$dscut ⇑${LA[$key]}/$key" ; } || { [[ -n "${LSA[$key]}" ]] && dscut="$dscut ⇈${LSA[$key]}/$key" ; } || dscut="$dscut $key"
 	done
 
-((bind_check && ${kbd_trie[$shortcut]} > 1)) && echo "paneless: bind: map: $map, section: $section, keys:'$keys', command: '$command' is overriding command path" 
-C[$command]="$shortcut" ; kbd_trie[$shortcut]="$command" ; bindings[$dscut]="$map	$section	$dscut	$command	$help"
+((bind_check && ${kbd_trie[$mode-$shortcut]} > 1)) && echo "paneless: bind: mode: $mode, map: $map, section: $section, keys:'$keys', command: '$command' is overriding command path" 
+
+kbd_C[$mode-$command]="$shortcut"
+kbd_trie[$mode-$shortcut]="$command"
+bindings[$dscut]="$mode	$map	$section	$dscut	$command	$help"
 }
 
 unbind()
 {
+local mode=
+[[ $# == 2 ]] && { mode="$1" ; shift ; } || mode=normal
+
 local keys="$1" shortcut= dscut=
 local keysa=( $keys )
 
@@ -42,18 +61,18 @@ for key in "${keysa[@]}"
 	{ [[ -n "${LA[$key]}"  ]] && dscut="$dscut ⇑${LA[$key]}/$key" ; } || { [[ -n "${LSA[$key]}" ]] && dscut="$dscut ⇈${LSA[$key]}/$key" ; } || dscut="$dscut $key"
 	done
 
-command="{$kbd_trie[$shortcut]}"
+command="$kbd_trie[$mode-$shortcut]"
 
-unset C[$command]
-unset kbd_trie[$shortcut]
+# echo unbind: mode: $bind_mode, command: $command, shortcut: $shortcut
+
+unset kbd_C[$mode-$command]
+unset kbd_trie[$mode-$shortcut]
 unset bindings[$dscut]
 }
 
 reset_exclude_command_from_redo() { declare -g -A exclude_from_redo=() ; }
-exclude_command_from_redo() { exclude_from_redo[$1]=1 ; }
+exclude_command_from_redo()       { exclude_from_redo[$1]=1 ; }
 
-handle_escape=
-handle_count=
 redo_key='ÅÅÅÅ'
 
 reset_exclude_command_from_redo
@@ -72,39 +91,49 @@ key_command()
 [[ "$REPLY" == ERROR_142                  ]]    && { keys_in= keys_command= HAS_COUNT= COUNT= ; return ; } # TIMEOUT
 [[ "$REPLY" == "?"                        ]]    && REPLY=QUESTION_MARK
 [[ "$REPLY" == "$leader_key"              ]]    && REPLY=LEADER
-[[ -n "$handle_escape" && "$REPLY" == ESCAPE ]] && { keys_in= keys_command= HAS_COUNT= COUNT= ; return ; } # INTERRUPTED
 
-[[ -n $handle_count &&-z "$keys_command" || "$keys_command" =~ ^[0-9]$ ]] && [[ "$REPLY" =~ ^[0-9]$ ]] && { [[ "$COUNT$REPLY" != 0 ]] &&
+[[ "$kbd_handle_escape" == 1 && "$REPLY" == ESCAPE ]] && { keys_in= keys_command= HAS_COUNT= COUNT= ; return ; } # INTERRUPTED
+
+[[ -n $kbd_handle_count &&-z "$keys_command" || "$keys_command" =~ ^[0-9]$ ]] && [[ "$REPLY" =~ ^[0-9]$ ]] && { [[ "$COUNT$REPLY" != 0 ]] &&
 	{ HAS_COUNT=COUNT ; COUNT="$COUNT$REPLY" ; } ; return ; }
 
 keys_command="$keys_command$REPLY" ; (( keys_in++)) #; pdhn "[$COUNT] <$keys_command> ($keys_in) -> ${kbd_trie[$HAS_COUNT$keys_command]}"
 
-[[ -n "$key_command_override" ]] && { $key_command_override && { clear_keys ; return ; } ; }
+[[ -n "$key_command_override" ]] && { $key_command_override && { kbd_clear ; return ; } ; }
+echo "key: $bind_mode-$HAS_COUNT$keys_command" >&4
 
-[[ $(type -t "${kbd_trie[$HAS_COUNT$keys_command]}") == function ]] && 
+[[ $(type -t "${kbd_trie[$bind_mode-$HAS_COUNT$keys_command]}") == function ]] && 
 	{
-	keys_function=${kbd_trie[$HAS_COUNT$keys_command]}
+
+	keys_function=${kbd_trie[$bind_mode-$HAS_COUNT$keys_command]}
 	$keys_function
 	
 	[[ "${exclude_from_redo[$keys_function]}" ]] || keys_latest_command="$keys_function"
-	clear_keys
+	kbd_clear
+	} \
+|| [[ ${kbd_trie[$bind_mode-$HAS_COUNT$shortcut]} == 1 ]] || [[ $(type -t "${kbd_trie[$bind_mode-DEFAULT]}") == function ]] && 
+	{
+	${kbd_trie[$bind_mode-DEFAULT]}
+	kbd_clear
 	}
 
 [[ "$HAS_COUNT$keys_command" == "$redo_key" && "$keys_latest_command" ]] &&
 	{
 	$keys_latest_command
-	clear_keys
+	kbd_clear
 	}
 }
 
-CMD_COLS=150
-
-kbdf()      { while read -t 0.01 ; do : ; done ; REPLY= ; }
-k_bindings(){ ((pop_kbindings)) && k_bpop || k_bfull ; alt_screen ; list ; }
-
-k_bfull()   { tcpreview ; exec 2>&9 ; k_bgen | fzf ; exec 2>"$fs/log" ; true ; }
-k_bpop()    { k_bgen | fzf-tmux -w 90% -h 90% $fzf_opt ; true ; }
-k_bgen()    { printf '%s\n' "${bindings[@]}" | sort -h | column -t --table-columns "____map____,____section____, ____key____,____command____,____does____" -s $'\t' -c $CMD_COLS ; }
+kbd_flush()   { while read -t 0.01 ; do : ; done ; REPLY= ; }
+kbd_clear()   { keys_in= keys_command= HAS_COUNT= COUNT= REPLY= ; }
+kbd_bindings(){ ((pop_kbindings)) && kbd_bpop || kbd_bfull ; alt_screen ; list ; }
+kbd_bfull()   { tcpreview ; exec 2>&9 ; kbd_bgen | fzf ; exec 2>"$fs/log" ; true ; }
+kbd_bpop()    { kbd_bgen | fzf-tmux -w 90% -h 90% $fzf_opt ; true ; }
+kbd_bgen()    
+{
+printf '%s\n' "${bindings[@]}" | sort -h | \
+	column -t --table-columns "____mode____,____map____,____section____, ____key____,____command____,____does____" -s $'\t' -c 150
+}
 
 get_key()
 {
