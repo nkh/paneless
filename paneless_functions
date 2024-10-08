@@ -4,9 +4,9 @@ flip_line_number(){ ((overlay_line_number++)) ; ((overlay_line_number > 2)) && o
 flip_line_total() { [[ "$overlay_line_total" ]] && overlay_line_total= || overlay_line_total="/${#lines[@]}" ; list ; }
 goto_first_line() { top_line=0 ; list ; }
 goto_last_line()  { (( top_line = (max_lines + 1) - LINES )) ; list ; }
-move_down()       { (( top_line += ${COUNT:-1} )) ; (( top_line > max_lines )) && top_line=max_lines ; list ; }
+move_down()       { (( top_line += ${1:-1} )) ; (( top_line > max_lines )) && top_line=max_lines ; list ; }
 move_down_arrow() { move_down ; }
-move_up()         { (( top_line -= ${COUNT:-1} )) ; (( top_line < 0 )) && top_line=0 ; list ; }
+move_up()         { (( top_line -= ${1:-1} )) ; (( top_line < 0 )) && top_line=0 ; list ; }
 move_up_arrow()   { move_up ; }
 move_page_down()  { (( top_line += LINES )) ; (( top_line > ((max_lines + 1) - LINES) )) && ((top_line=((max_lines + 1) - LINES) )) ; list ; }
 move_page_up()    { (( top_line -= LINES )) ; (( top_line < 0 )) && top_line=0 ; list ; }

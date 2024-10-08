@@ -52,6 +52,9 @@ while [[ $1 != -- ]]; do
 done
 shift # -- in argument list to getopt
 
+# Settings
+[[ -z "$CONTINUATION_GLYPH" ]] && CONTINUATION_GLYPH='~'
+
 # load libs
 source "$(dirname "$0")/paneless_keyboard"  || { echo "paneless: can't find keyboard library" ; exit 1 ; }
 source "$(dirname "$0")/paneless_core"      || { echo "paneless: can't find core library" ; exit 1 ; }

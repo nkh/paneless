@@ -9,6 +9,8 @@ load_input_streams
 
 load_input_streams()
 {
+[[ ${#SOURCES[@]} == 0 ]] && echo "paneless: nothing to display" && exit
+
 rm -f $fs/*
 compute_pane_sizes
 
@@ -114,13 +116,10 @@ for w in "${widths[@]}" ; do
 	fi
 done
 
-(( sharing_panes > 0 )) && 
-	{
-	(( pane_share = (remaining_cols * remaining_perc) / (sharing_panes * 100) )) || pane_share=0
-	(( pane_share <= 0 )) && { echo "paneless: not enought room" ; exit 1 ; }
-	}
+(( pane_share = (remaining_cols * remaining_perc) / (sharing_panes * 100) )) || pane_share=0
+(( pane_share <= 0 )) && { echo "paneless: not enought room" ; exit 1 ; }
 
-for (( source_index = 0 ;  source_index < $sources ; source_index++ )) ;do
+for (( source_index = 0 ; source_index < $sources ; source_index++ )) ;do
 	[[ "${pane_columns[source_index]}" ]] &&
 		{
 		[[ "${pane_columns[source_index]}" =~ [[:digit:]][[:digit:]]% ]] &&
@@ -244,7 +243,7 @@ alt_screen()      { echo -en '\e[?1049h' ; stty -echo ; tput civis ; }
 restore_screen()  { tput cnorm ; stty echo ; echo -ne "\e[?25l\e[?25h\e[?1049l" ; }
 
 # core setup
-continuation_glyph=$"$DARK_GREY$PANELESS_GLYPH~$RESET"
+continuation_glyph=$"$DARK_GREY$PANELESS_GLYPH$CONTINUATION_GLYPH$RESET"
 (( ansi )) && { hash ansiexpand >/dev/null && EXPAND=ansiexpand || EXPAND=expand ; } || EXPAND=expand
 
 start_character=0
